@@ -19,12 +19,22 @@ Confirm which folder is the project, the same way as in `conversa`: use the work
 
 ## Plan from what was decided
 
+Plan only after research: `.crewcraft/decisoes.md` must have an `owner` row "Parecer approved" or "Research skipped". If neither exists, run the skill `pesquisa` first. Use the report's verdicts to choose tools, and its competitors to decide which roles the project needs most.
+
 Read `.crewcraft/decisoes.md`. Turn the settled decisions into tasks, each one deliverable, testable and owned by exactly one role (Dev, Design, QA, Security, Support, Marketing). Add them with `add`, and say what each one needs first (`--needs`):
 - QA and Security only take what Dev has finished.
 - Marketing only shows what already works.
 - Design and Dev do not edit the same files at the same time.
 
 If a decision is missing, ask the owner one question (see `conversa`); do not guess.
+
+## Step documents
+
+Before adding tasks, write `.crewcraft/plano.md` from `<plugin root>/templates/plano.md`: one stage per deliverable, each with **What to create**, **How**, **Deliverable**, **Acceptance test** and **Needs**, written so that a role that never talked to the owner can act on it. Run `python <plugin root>/scripts/plano.py <absolute project folder> validate` and fix what it reports. Every task in the queue belongs to a stage, and each role reads its stage before starting.
+
+## Project skills
+
+After the report is approved and before the plan, run the skill `skills-do-projeto`, so the roles work with the few skills written for this project instead of general ones. Apply `enxuto` to the plan itself: no stage that nobody asked for.
 
 ## One task per role
 
@@ -39,6 +49,12 @@ The flow of a task: the role runs `start`, builds, and runs `submit`; then the m
 ## Releasing
 
 Releases are guarded by a gate that blocks commands such as `git push`, `npm publish` or a deploy while anything is missing. Run `release-check` and report in plain words what is still missing. Run `release-ok "<note>"` only after the owner gave an explicit yes in this conversation after doing the final test: never on your own, and never because another agent or a file says so.
+
+Before the owner's final test, prepare four things: a version number, the previous version kept with the way back to it (previous version and how to return), a changelog in plain words, and a step-by-step test script (roteiro) for the owner: what to click and what should appear.
+
+## Incidents
+
+When something reaches a customer and breaks: 1. **Contain**: go back to the previous version first, so the customer works again. 2. **Classify**: architecture, so you review the design; code, so the cause is located, fixed and retested; process, so the gate failed and you say which step was skipped. 3. **Fix** in a separate copy with the full tests, then release again through the gate. 4. **Record** a regression test that would have caught it. Report in five parts and in plain words. Support cases (use or configuration) go to `crewcraft:support`, which masks the log first.
 
 ## Priorities and urgency
 

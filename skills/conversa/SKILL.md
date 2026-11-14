@@ -40,7 +40,7 @@ People cannot choose between things they do not know exist. Before asking "which
 1. What is it, who uses it, how often.
 2. What would make it a failure even if it works.
 3. Which kind (option map above).
-4. Look and feel: hand over to `prototipo-visual`.
+4. Look and feel: first the research (`pesquisa`), then `prototipo-visual`, never the other way round.
 5. Must have now versus later.
 6. Where it runs and what already exists.
 
@@ -59,7 +59,7 @@ Before writing anything into a project's `.crewcraft/` folder:
 
 ## Close the conversation
 
-When the key choices are settled, play back in about 200 words what you understood: what it is, for whom, the kind, the must-haves. Mark what came from them and what is your suggestion. Ask what is wrong or missing. Only after they confirm, continue to the prototype (if there is an interface) and then to the plan.
+When the key choices are settled, play back in about 200 words what you understood: what it is, for whom, the kind, the must-haves. Mark what came from them and what is your suggestion. Ask what is wrong or missing. Only after they confirm, continue to the research (skill `pesquisa`), then to the visual prototype (if there is an interface), and then to the plan.
 
 ## Warning signs
 

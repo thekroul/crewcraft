@@ -19,6 +19,8 @@ def shingles(text: str, n: int = 8) -> set[tuple[str, ...]]:
 def _corpus_index(corpus: Path, n: int) -> dict[tuple[str, ...], str]:
     index: dict[tuple[str, ...], str] = {}
     for path in corpus.rglob("*.md"):
+        if "crewcraft" in [part.lower() for part in path.relative_to(corpus).parts]:
+            continue  # this plugin's own installed copy is not a third-party source
         try:
             text = path.read_text(encoding="utf-8", errors="replace")
         except OSError:

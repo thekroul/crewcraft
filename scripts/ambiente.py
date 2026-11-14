@@ -16,6 +16,17 @@ CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 SANDBOX = r"C:\Windows\System32\WindowsSandbox.exe"
 
 
+def reference_libraries(claude_home=None) -> list:
+    """Folders of archived third-party skills (kept as read-only reference), by name only."""
+    home = Path(claude_home) if claude_home else Path.home() / ".claude"
+    found = []
+    if home.is_dir():
+        for folder in sorted(home.glob("skills-arquivo*")):
+            if folder.is_dir():
+                found.append({"name": folder.name, "skills": sum(1 for c in folder.iterdir() if c.is_dir())})
+    return found
+
+
 def detect(which=shutil.which, platform=sys.platform, exists=os.path.exists) -> dict:
     name = "windows" if platform.startswith("win") else "macos" if platform == "darwin" else "linux"
     caps = {"os": name, "python": sys.version.split()[0]}
@@ -24,6 +35,7 @@ def detect(which=shutil.which, platform=sys.platform, exists=os.path.exists) -> 
     caps["edge"] = bool(which("msedge")) or bool(exists(EDGE))
     caps["chrome"] = bool(which("chrome") or which("google-chrome")) or bool(exists(CHROME))
     caps["windows_sandbox"] = name == "windows" and bool(exists(SANDBOX))
+    caps["reference_libraries"] = reference_libraries()
     return caps
 
 
@@ -82,6 +94,10 @@ def options(caps: dict) -> dict:
 
 def render(caps: dict, listing: dict) -> str:
     lines = ["# Environment sheet", "", f"Operating system: {caps['os']}. Python {caps['python']}.", ""]
+    for lib in caps.get("reference_libraries", []):
+        lines.append(f"Reference library: {lib['name']} ({lib['skills']} archived skills, read-only, consult it when researching).")
+    if caps.get("reference_libraries"):
+        lines.append("")
     for job, items in listing.items():
         lines += [f"## {job.replace('_', ' ')}", ""]
         for item in items:

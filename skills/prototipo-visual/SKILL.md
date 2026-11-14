@@ -13,6 +13,8 @@ Ask one question per message, even here: the same rule as in `conversa` applies.
 
 ## Before showing anything
 
+0. Research comes first. If `.crewcraft/decisoes.md` has no `owner` row "Parecer approved" and no row "Research skipped", say that the look is shown after the research, and run the skill `pesquisa`. Use the competitors' design qualities from the approved report as the starting point of the three structures.
+
 1. If the project has no `.crewcraft/` folder yet, create it first (skill `ficha-do-projeto`). Then read the project's `ficha-visual.md`. Respect the palette, density and the **Banned (AI look)** list. If it is still the empty template, ask what kind of people will use this and what they dislike, one question.
 2. Use believable sample data: uneven numbers, long titles, names that look real. Never round placeholders.
 
