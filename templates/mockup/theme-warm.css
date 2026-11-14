@@ -1,0 +1,9 @@
+/* Warm, restrained theme: clay accent, sand neutrals. No gradients. */
+:root {
+  --bg: #f6f1ea;
+  --surface: #fffdf9;
+  --text: #2d2620;
+  --accent: #b5532f;
+  --accent-2: #7a6a5a;
+  --border: #e3d9cc;
+}

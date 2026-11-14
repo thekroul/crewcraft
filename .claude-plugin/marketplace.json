@@ -1,0 +1,13 @@
+{
+  "name": "crewcraft",
+  "owner": {
+    "name": "Crewcraft"
+  },
+  "plugins": [
+    {
+      "name": "crewcraft",
+      "source": "./",
+      "description": "Early version. Asks before it builds, shows you the look before it codes, and adapts to how much you know."
+    }
+  ]
+}

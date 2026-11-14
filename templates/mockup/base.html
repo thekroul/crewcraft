@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup</title>
+<!-- Round 1 changes THIS file (structure). Round 2 changes ONLY the next line (theme). -->
+<link rel="stylesheet" href="theme-neutral.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+  .app { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  .side { background: var(--surface); border-right: 1px solid var(--border); padding: 16px; }
+  .side a { display: block; padding: 8px 10px; color: var(--text); text-decoration: none; border-radius: 4px; }
+  .side a.on { background: var(--bg); border-left: 3px solid var(--accent); }
+  .main { padding: 20px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 14px; }
+  .card small { color: var(--accent-2); }
+  .card strong { display: block; font-size: 1.6rem; margin-top: 6px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--accent-2); font-weight: 600; }
+  .bar { height: 8px; background: var(--border); border-radius: 2px; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+  @media (max-width: 700px) { .app { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="side">
+    <a class="on" href="#">Overview</a>
+    <a href="#">Items</a>
+    <a href="#">Reports</a>
+    <a href="#">Settings</a>
+  </nav>
+  <main class="main">
+    <section class="kpis">
+      <div class="card"><small>Total</small><strong>1,371</strong></div>
+      <div class="card"><small>Delivered</small><strong>491</strong></div>
+      <div class="card"><small>Late</small><strong>210</strong></div>
+      <div class="card"><small>No deadline</small><strong>1,156</strong></div>
+    </section>
+    <section class="card">
+      <table>
+        <thead><tr><th>Title</th><th>Owner</th><th>Progress</th></tr></thead>
+        <tbody>
+          <tr><td>Access control review</td><td>Ana</td><td><div class="bar"><i style="width:100%"></i></div></td></tr>
+          <tr><td>Backlog grooming</td><td>Bruno</td><td><div class="bar"><i style="width:100%"></i></div></td></tr>
+          <tr><td>Help center v2</td><td>Carla</td><td><div class="bar"><i style="width:2%"></i></div></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+</body>
+</html>

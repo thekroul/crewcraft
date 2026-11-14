@@ -1,0 +1,9 @@
+/* Cool, restrained theme: one teal accent, slate neutrals. No gradients. */
+:root {
+  --bg: #f3f5f6;
+  --surface: #ffffff;
+  --text: #1f2a30;
+  --accent: #2a9d9a;
+  --accent-2: #5c6b73;
+  --border: #dde3e6;
+}
