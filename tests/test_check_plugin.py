@@ -99,5 +99,46 @@ class MarketplaceTests(unittest.TestCase):
         self.assertTrue(any("owner" in e for e in check_plugin(self.root)))
 
 
+class AgentAndHookTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        make_plugin(self.root)
+        (self.root / "agents").mkdir()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def agent(self, name, tools="Read, Grep", description="Does a job.", file=None):
+        (self.root / "agents" / f"{file or name}.md").write_text(
+            f"---\nname: {name}\ndescription: {description}\ntools: {tools}\n---\n\nBody.\n", encoding="utf-8")
+
+    def test_valid_agent_passes(self):
+        self.agent("dev", tools="Read, Edit, Write, Bash")
+        self.assertEqual(check_plugin(self.root), [])
+
+    def test_agent_name_must_match_file(self):
+        self.agent("other", file="dev")
+        self.assertTrue(any("agents/dev" in e and "name" in e for e in check_plugin(self.root)))
+
+    def test_agent_needs_a_description(self):
+        self.agent("dev", description="")
+        self.assertTrue(any("agents/dev" in e and "description" in e for e in check_plugin(self.root)))
+
+    def test_supervisors_cannot_create(self):
+        self.agent("supervisor-dev", tools="Read, Grep, Edit")
+        self.assertTrue(any("supervisor-dev" in e and "Edit" in e for e in check_plugin(self.root)))
+        self.agent("supervisor-dev", tools="Read, Grep, Bash")
+        self.assertEqual(check_plugin(self.root), [])
+
+    def test_hooks_file_must_be_valid_and_use_plugin_root(self):
+        (self.root / "hooks").mkdir()
+        (self.root / "hooks" / "hooks.json").write_text("{bad", encoding="utf-8")
+        self.assertTrue(any("hooks.json" in e for e in check_plugin(self.root)))
+        (self.root / "hooks" / "hooks.json").write_text(json.dumps({"hooks": {"PreToolUse": [
+            {"matcher": "Bash", "hooks": [{"type": "command", "command": "python gate.py"}]}]}}), encoding="utf-8")
+        self.assertTrue(any("CLAUDE_PLUGIN_ROOT" in e for e in check_plugin(self.root)))
+
+
 if __name__ == "__main__":
     unittest.main()

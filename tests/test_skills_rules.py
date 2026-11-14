@@ -36,6 +36,43 @@ class SkillRulesTests(unittest.TestCase):
                        "when the owner reports a problem or declares something urgent"]:
             self.assertIn(needle.lower(), lowered, needle)
 
+    def test_manager_dispatches_the_crew_and_guards_the_release(self):
+        lowered = skill("gerente").lower()
+        for needle in ["crewcraft:dev", "crewcraft:qa", "crewcraft:supervisor-dev", "crewcraft:supervisor-teste",
+                       "release-check", "release-ok", "explicit yes", "plugin root", "three rejections"]:
+            self.assertIn(needle, lowered, needle)
+
+    def test_crew_agents_exist_and_supervisors_cannot_edit(self):
+        for name in ["dev", "qa", "supervisor-dev", "supervisor-teste"]:
+            self.assertTrue((ROOT / "agents" / f"{name}.md").is_file(), name)
+        for name in ["supervisor-dev", "supervisor-teste"]:
+            tools = (ROOT / "agents" / f"{name}.md").read_text(encoding="utf-8").split("tools:", 1)[1].split("\n", 1)[0]
+            self.assertNotIn("Edit", tools)
+            self.assertNotIn("Write", tools)
+
+    def test_design_security_and_marketing_roles(self):
+        for name in ["design", "supervisor-design", "security", "marketing"]:
+            self.assertTrue((ROOT / "agents" / f"{name}.md").is_file(), name)
+        agent = lambda n: (ROOT / "agents" / f"{n}.md").read_text(encoding="utf-8").lower()
+        self.assertIn("visual approved", agent("design"))
+        self.assertIn("banned", agent("supervisor-design"))
+        self.assertIn("only what already works", agent("marketing"))
+        self.assertIn("finish", agent("marketing"))
+        self.assertIn("never fix", agent("security"))
+        tools = agent("supervisor-design").split("tools:", 1)[1].splitlines()[0]
+        self.assertNotIn("edit", tools)
+        self.assertNotIn("write", tools)
+
+    def test_support_agent_masks_before_reading_and_proposes_priority(self):
+        text = (ROOT / "agents" / "support.md").read_text(encoding="utf-8").lower()
+        for needle in ["mask.py", "never read the original", "five parts", "normal", "propose", "plain words"]:
+            self.assertIn(needle, text, needle)
+
+    def test_environment_skill_rules(self):
+        text = skill("ambiente").lower()
+        for needle in ["ambiente.py", "approval", "never in the plugin", "weakness", "filename", "source", "size"]:
+            self.assertIn(needle, text, needle)
+
     def test_manager_description_starts_with_use_when(self):
         self.assertTrue(skill("gerente").split("description:", 1)[1].lstrip().startswith("Use when"))
 

@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crewcraft office</title>
+<style>
+  :root { --s: 3; --ink: #f3ead9; --plate: #2a2420; --edge: #6f5a43; --ok: #7bb26a; --bar: #d9a441; --stop: #c0583f; }
+  html, body { margin: 0; height: 100%; background: #2b2622; color: var(--ink); font-family: "Courier New", ui-monospace, monospace; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+  #stage { position: relative; line-height: 0; border: 3px solid #1b1714; }
+  canvas { display: block; image-rendering: pixelated; }
+  .tag { position: absolute; transform: translate(-50%, -100%); text-align: center; white-space: nowrap; pointer-events: none; font-size: calc(var(--s) * 2.6px); line-height: 1.15; }
+  .who { display: inline-block; background: var(--plate); border: 1px solid var(--edge); padding: 1px 4px; font-weight: bold; color: var(--ink); }
+  .who small { font-weight: normal; opacity: .8; }
+  .task { display: none; margin: 0 auto 2px; background: var(--plate); border: 1px solid var(--edge); padding: 1px 4px 3px; color: var(--ink); min-width: calc(var(--s) * 24px); max-width: calc(var(--s) * 60px); overflow: hidden; text-overflow: ellipsis; }
+  .task .bar { height: calc(var(--s) * 1px); background: #54473a; margin-top: 2px; overflow: hidden; }
+  .task .bar i { display: block; height: 100%; width: 35%; background: var(--bar); animation: slide 1.6s linear infinite; }
+  .task.review .bar i, .task.done .bar i, .task.blocked .bar i { width: 100%; animation: none; }
+  .task.done .bar i { background: var(--ok); }
+  .task.blocked .bar i { background: var(--stop); }
+  @keyframes slide { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
+  .bubble { position: absolute; transform: translate(-50%, -100%); background: #fff7e6; color: #2a2420; border: 1px solid #2a2420; padding: 1px 5px; font-size: calc(var(--s) * 2.6px); line-height: 1.2; pointer-events: none; white-space: nowrap; display: none; }
+  .tv { position: absolute; transform: translateX(-50%); text-align: center; color: #e8d9a6; pointer-events: none; line-height: 1.2; font-size: calc(var(--s) * 2.4px); }
+  .tv b { font-size: calc(var(--s) * 5.5px); display: block; line-height: 1; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas><div id="tv" class="tv"></div></div>
+<script>
+(() => {
+const W = 320, H = 180;
+const cvs = document.getElementById('c'), ctx = cvs.getContext('2d');
+const stage = document.getElementById('stage'), tvEl = document.getElementById('tv');
+cvs.width = W; cvs.height = H;
+let S = 3;
+function resize() {
+  S = Math.max(1, Math.floor(Math.min(innerWidth / W, (innerHeight - 20) / H)));
+  cvs.style.width = W * S + 'px'; cvs.style.height = H * S + 'px';
+  stage.style.setProperty('--s', S);
+}
+addEventListener('resize', resize); resize();
+const PT = (navigator.language || 'en').toLowerCase().startsWith('pt');
+const TXT = PT ? { review: 'em revisão', blocked: 'precisa do dono', done: 'Pronto e testado', of: 'de', tests: 'prontos e testados', offline: 'sem conexão', empty: 'nenhuma tarefa ainda' }
+               : { review: 'in review', blocked: 'needs the owner', done: 'Done and tested', of: 'of', tests: 'done and tested', offline: 'no connection', empty: 'no tasks yet' };
+const CHAT = PT ? ['bom dia!', 'café depois?', 'e a fila hoje?', 'conferi aqui…', 'pausa rápida'] : ['morning!', 'coffee later?', 'how is the queue?', 'checked it…', 'quick break'];
+const rnd = (a, b) => a + Math.random() * (b - a), pick = a => a[Math.floor(Math.random() * a.length)];
+const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
+
+const COLS = [22, 136, 250], ROWTOP = [66, 112], AP = [103, 103, 217], STRIP = { x0: 12, x1: 306, y0: 152, y1: 172 };
+const COOLER = { x: 282, y: 152 };
+const LOOK = { Dev: ['#5b7f95', '#3a2a20', '#e0b48c', '#3d4a57'], Design: ['#8a5a7a', '#2a1d18', '#d9a67c', '#40384a'],
+  QA: ['#9a6b4f', '#1e1a17', '#c99068', '#4a4038'], Security: ['#4f7a5a', '#4a3322', '#e3b98f', '#38443a'],
+  Support: ['#b07a3a', '#5a3a25', '#d8a27a', '#4a4036'], Marketing: ['#7a6aa0', '#2f2420', '#e0b48c', '#3e3b50'] };
+let placar = null, people = [], online = true, seen = null;
+
+function slotGeo(i) {
+  const col = i % 3, row = Math.floor(i / 3), top = ROWTOP[row];
+  return { deskX: COLS[col], deskTop: top, seatX: COLS[col] + 24, seatY: top - 1, apX: AP[col] };
+}
+function newPerson(r, i) {
+  const g = slotGeo(i), [shirt, hair, skin, pants] = LOOK[r.role] || LOOK.Dev;
+  const el = document.createElement('div'); el.className = 'tag';
+  el.innerHTML = '<span class="task"><span class="tl"></span><div class="bar"><i></i></div></span><br><span class="who"></span>';
+  el.querySelector('.who').innerHTML = r.name + ' <small>' + r.role + '</small>';
+  const bubble = document.createElement('div'); bubble.className = 'bubble';
+  stage.appendChild(el); stage.appendChild(bubble);
+  return Object.assign({ role: r.role, name: r.name, slot: i, g, shirt, hair, skin, pants, el, bubble, task: el.querySelector('.task'),
+    tl: el.querySelector('.tl'), x: g.seatX, y: g.seatY, dir: 'down', moving: false, seated: true, mode: 'seat', route: [],
+    sub: 'pause', wait: 1, server: r.state, title: r.task, sayT: 0, say: '', flash: 0, drinkT: 0, talkT: 0, step: -1, waitT: 0, chatCool: 0 }, {});
+}
+function applyState(s) {
+  placar = s.placar;
+  s.roles.forEach((r, i) => {
+    let p = people.find(q => q.role === r.role);
+    if (!p) { p = newPerson(r, i); people.push(p); }
+    p.server = r.state; p.title = r.task;
+  });
+  people = people.filter(p => { const keep = s.roles.some(r => r.role === p.role); if (!keep) { p.el.remove(); p.bubble.remove(); } return keep; });
+  const events = s.events || [];
+  if (seen === null) seen = events.length ? events[events.length - 1].time : '';
+  events.filter(e => e.time > seen && (e.event === 'approve' || e.event === 'finish')).forEach(e => {
+    const p = people.find(q => q.role === e.role); if (p) p.flash = 3;
+  });
+  if (events.length) seen = events[events.length - 1].time;
+}
+async function poll() {
+  try { const r = await fetch('state.json', { cache: 'no-store' }); applyState(await r.json()); online = true; } catch (e) { online = false; }
+}
+poll(); setInterval(poll, 2000);
+
+function move(p, dt) {
+  if (!p.route.length) { p.moving = false; return false; }
+  const [tx, ty] = p.route[0], dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), st = 24 * dt;
+  if (d <= st) { p.x = tx; p.y = ty; p.route.shift(); } else { p.x += dx / d * st; p.y += dy / d * st; }
+  p.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'); p.moving = true; return true;
+}
+const face = (p, tx, ty) => { const dx = tx - p.x, dy = ty - p.y; p.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'); };
+const seatRoute = p => [[p.g.apX, 160], [p.g.apX, p.g.seatY - 9], [p.g.seatX, p.g.seatY - 9], [p.g.seatX, p.g.seatY]];
+const leaveRoute = p => [[p.g.seatX, p.g.seatY - 9], [p.g.apX, p.g.seatY - 9], [p.g.apX, 160]];
+function endChat(p) { p.sub = 'pause'; p.wait = rnd(1, 2); p.chatCool = 25; p.step = -1; }
+function breakChat(p) { people.forEach(q => { if (q !== p && ['waitchat', 'talk', 'chat'].includes(q.sub) && q.mode === 'idle') endChat(q); }); }
+const idleOthers = p => people.filter(q => q !== p && q.mode === 'idle' && ['pause', 'walk'].includes(q.sub));
+
+function idleStep(p, dt) {
+  p.chatCool -= dt;
+  switch (p.sub) {
+    case 'pause': p.moving = false; p.wait -= dt;
+      if (p.wait <= 0) {
+        const others = idleOthers(p), roll = Math.random();
+        if (others.length && p.chatCool <= 0 && roll < 0.4) {
+          const o = pick(others); p.sub = 'chat'; p.partner = o; o.sub = 'waitchat'; o.route = []; o.waitT = 14; o.partner = p;
+          p.route = [[Math.max(STRIP.x0, Math.min(STRIP.x1, o.x + (o.x < 160 ? 15 : -15))), Math.max(STRIP.y0, Math.min(STRIP.y1, o.y))]];
+        } else if (roll < 0.7) { p.sub = 'drink'; p.phase = 'going'; p.route = [[COOLER.x, COOLER.y]]; }
+        else { p.sub = 'walk'; p.route = [[rnd(STRIP.x0, STRIP.x1), rnd(STRIP.y0, STRIP.y1)]]; }
+      } break;
+    case 'walk': if (!move(p, dt)) { p.sub = 'pause'; p.wait = rnd(1, 3); } break;
+    case 'drink':
+      if (p.phase === 'going') { if (!move(p, dt)) { p.phase = 'drinking'; p.dir = 'right'; p.drinkT = 3; p.say = '…'; p.sayT = 3; } }
+      else { p.drinkT -= dt; if (p.drinkT <= 0) { p.sub = 'pause'; p.wait = rnd(1, 3); p.phase = ''; } } break;
+    case 'chat': { const o = p.partner;
+      if (!move(p, dt)) {
+        if (o && o.sub === 'waitchat' && o.mode === 'idle') { p.sub = o.sub = 'talk'; p.talkT = o.talkT = 7; p.step = o.step = -1; face(p, o.x, o.y); face(o, p.x, p.y); }
+        else { p.sub = 'pause'; p.wait = 1; }
+      } break; }
+    case 'waitchat': p.moving = false; p.waitT -= dt; if (p.partner) face(p, p.partner.x, p.partner.y); if (p.waitT <= 0) endChat(p); break;
+    case 'talk': { p.moving = false; p.talkT -= dt; const st = Math.floor((7 - p.talkT) / 1.6);
+      if (st !== p.step && p.talkT > 0) { p.step = st; const sp = st % 2 === 0 ? p : p.partner; if (sp) { sp.say = pick(CHAT); sp.sayT = 1.5; } }
+      if (p.talkT <= 0) endChat(p); break; }
+  }
+}
+function updatePerson(p, dt) {
+  p.sayT = Math.max(0, p.sayT - dt); p.flash = Math.max(0, p.flash - dt);
+  const want = p.server !== 'idle';
+  if (want) {
+    if (p.mode === 'toSeat') { if (!move(p, dt)) { p.mode = 'seat'; p.seated = true; p.dir = 'down'; p.moving = false; } }
+    else if (p.mode !== 'seat') { breakChat(p); p.sub = ''; p.mode = 'toSeat'; p.seated = false; p.route = seatRoute(p); }
+  } else {
+    if (p.mode === 'seat') { p.seated = false; p.mode = 'leave'; p.route = leaveRoute(p); }
+    else if (p.mode === 'toSeat') { p.mode = 'leave'; p.route = [[p.g.apX, 160]]; }
+    else if (p.mode === 'leave') { if (!move(p, dt)) { p.mode = 'idle'; p.sub = 'pause'; p.wait = rnd(1, 2); } }
+    else idleStep(p, dt);
+  }
+}
+
+function drawRoom() {
+  R(0, 0, W, 44, '#d9c9a8'); R(0, 40, W, 4, '#b79f78');
+  for (let y = 44; y < H; y += 6) { R(0, y, W, 6, ((y / 6) | 0) % 2 ? '#c79a63' : '#c19359'); R(0, y + 5, W, 1, '#a97b48'); }
+  R(60, 142, 200, 36, '#6f4538'); R(62, 144, 196, 32, '#8b5a4a');
+  [[22, 8], [264, 8]].forEach(([x, y]) => { R(x, y, 34, 26, '#6b4f35'); R(x + 2, y + 2, 30, 22, '#a9cde0'); R(x + 16, y + 2, 2, 22, '#6b4f35'); R(x + 2, y + 12, 30, 2, '#6b4f35'); });
+  R(126, 6, 68, 32, '#2a2420'); R(129, 9, 62, 26, '#1d3a35');
+  const pct = placar ? placar.percent : 0;
+  R(135, 29, 50, 4, '#10231f'); R(135, 29, Math.round(50 * pct / 100), 4, '#d9a441');
+  tvEl.style.left = (160 * S) + 'px'; tvEl.style.top = (10 * S) + 'px';
+  tvEl.innerHTML = !online ? TXT.offline : placar ? '<b>' + pct + '%</b>' + placar.done + ' ' + TXT.of + ' ' + placar.total + ' ' + TXT.tests : TXT.empty;
+}
+function drawDesk(g) {
+  const x0 = g.deskX, t = g.deskTop;
+  R(x0, t, 48, 8, '#b98a54'); R(x0, t, 48, 1, '#d4a86c'); R(x0 + 2, t + 8, 44, 8, '#8f6638'); R(x0 + 4, t + 10, 18, 5, '#7a5530');
+  R(x0 + 17, t - 7, 14, 8, '#3b3a3c'); R(x0 + 18, t - 6, 12, 5, '#4b4a4d'); R(x0 + 36, t - 4, 6, 4, '#e8e0cf');
+}
+function drawCooler() { R(288, 118, 13, 19, '#cfd8dc'); R(290, 106, 9, 13, '#8ec5e8'); R(291, 107, 2, 10, '#bfe0f2'); R(292, 125, 5, 3, '#4b6a7d'); R(287, 137, 15, 2, '#8c969b'); }
+function drawPlant(x, y) { R(x, y + 9, 9, 7, '#8a4f33'); R(x - 2, y + 1, 13, 9, '#4d7a3c'); R(x + 1, y - 3, 7, 5, '#5f8f49'); }
+function drawSofa() { R(8, 128, 42, 9, '#5b6e7a'); R(8, 136, 42, 11, '#6b7f8c'); R(6, 132, 4, 14, '#566873'); R(48, 132, 4, 14, '#566873'); }
+function drawPerson(p, time) {
+  const x = Math.round(p.x), y = Math.round(p.y), f = p.moving ? Math.floor(time * 6) % 2 : 0;
+  if (p.seated) {
+    R(x - 6, y - 16, 12, 11, '#5a4636'); R(x - 4, y - 14, 8, 8, p.shirt);
+    R(x - 3, y - 21, 6, 6, p.skin); R(x - 3, y - 22, 6, 2, p.hair); R(x - 4, y - 21, 1, 3, p.hair); R(x + 3, y - 21, 1, 3, p.hair);
+    R(x - 2, y - 18, 1, 1, '#2a2420'); R(x + 1, y - 18, 1, 1, '#2a2420');
+    if (p.server === 'work') { R(x - 2, y - 16, 4, 1, '#bfe3f5'); const b = Math.floor(time * 5) % 2; R(x - 9, y - 4 + b, 2, 2, p.skin); R(x + 7, y - 4 + 1 - b, 2, 2, p.skin); }
+    return;
+  }
+  R(x - 4, y - 1, 9, 2, 'rgba(30,20,10,.28)');
+  const side = p.dir === 'left' || p.dir === 'right', a = f ? 1 : 0, b = f ? 0 : 1;
+  if (side) { R(x - 2 + (f ? 1 : -1), y - 7, 2, 6, p.pants); R(x - (f ? 1 : -1), y - 7, 2, 6, p.pants); }
+  else { R(x - 3, y - 7, 2, 6 - a, p.pants); R(x + 1, y - 7, 2, 6 - b, p.pants); R(x - 3, y - 1 - a, 3, 1, '#2b2420'); R(x + 1, y - 1 - b, 3, 1, '#2b2420'); }
+  R(x - 4, y - 14, 8, 8, p.shirt);
+  const sw = p.moving ? (f ? 1 : -1) : 0;
+  if (side) R(x - 1, y - 13 + sw, 2, 6, p.shirt); else { R(x - 5, y - 13 + sw, 1, 6, p.shirt); R(x + 4, y - 13 - sw, 1, 6, p.shirt); }
+  const hx = side ? (p.dir === 'right' ? x - 2 : x - 4) : x - 3;
+  R(hx, y - 20, 6, 6, p.skin);
+  if (p.dir === 'up') R(hx, y - 21, 6, 7, p.hair);
+  else { R(hx, y - 21, 6, 2, p.hair); if (side) R(p.dir === 'right' ? hx + 4 : hx + 1, y - 17, 1, 1, '#2a2420'); else { R(hx + 1, y - 17, 1, 1, '#2a2420'); R(hx + 4, y - 17, 1, 1, '#2a2420'); } }
+}
+function overlay(p) {
+  const topY = p.seated ? p.y - 23 : p.y - 22;
+  p.el.style.left = (p.x * S) + 'px'; p.el.style.top = (topY * S - 2) + 'px';
+  const show = p.seated && (p.server !== 'idle');
+  p.task.style.display = show ? 'block' : 'none';
+  if (show) {
+    const label = p.flash > 0 ? TXT.done : p.server === 'review' ? TXT.review + ': ' + p.title : p.server === 'blocked' ? TXT.blocked + ': ' + p.title : p.title;
+    p.tl.textContent = label;
+    p.task.className = 'task ' + (p.flash > 0 ? 'done' : p.server === 'review' ? 'review' : p.server === 'blocked' ? 'blocked' : 'work');
+    p.task.style.display = 'block';
+  }
+  if (p.sayT > 0) { p.bubble.style.display = 'block'; p.bubble.textContent = p.say; p.bubble.style.left = (p.x * S) + 'px'; p.bubble.style.top = ((topY - 9) * S) + 'px'; }
+  else p.bubble.style.display = 'none';
+}
+let last = performance.now(), clock = 0;
+function frame(now) {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now; clock += dt;
+  people.forEach(p => updatePerson(p, dt));
+  ctx.clearRect(0, 0, W, H); drawRoom();
+  const items = [{ y: 127, fn: drawCooler }, { y: 90, fn: () => drawPlant(8, 74) }, { y: 148, fn: drawSofa }];
+  people.forEach(p => { items.push({ y: p.g.deskTop + 16, fn: () => drawDesk(p.g) }); items.push({ y: p.seated ? p.g.deskTop : p.y, fn: () => drawPerson(p, clock) }); });
+  items.sort((a, b) => a.y - b.y).forEach(i => i.fn());
+  people.forEach(overlay);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

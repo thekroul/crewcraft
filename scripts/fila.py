@@ -5,13 +5,18 @@ Usage: python scripts/fila.py <absolute project folder> <command> [args]
   add "<task>" <role> [--priority P] [--needs T1,T2] [--by manager|owner]
   next <role>                           what that role should do now
   start <id>                            a role starts a task
-  finish <id> "<evidence it was tested>"
+  submit <id>                           the role hands its work to the supervisor
+  approve <id> "<evidence>" [--by name] supervisor: done and tested
+  reject <id> "<reason>" [--by name]    back to the role (3rd time: asks the owner)
+  finish <id> "<evidence>"              Support and Marketing only (no supervisor)
+  release-check / release-ok "<note>"   release gate / the owner said yes
   priority <id> <Urgent|High|Normal|Low> --by manager|owner
   placar                                honest scoreboard
   validate                              check the queue rules
 Every change appends a line to .crewcraft/eventos.jsonl.
 """
 import json
+import re
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -24,11 +29,12 @@ except ImportError:  # run as a plain script
 
 ROLES = ["Dev", "Design", "QA", "Security", "Support", "Marketing"]
 PRIORITIES = {"Urgent": 0, "High": 1, "Normal": 2, "Low": 3}
-STATUSES = ["todo", "doing", "paused", "blocked", "done"]
+STATUSES = ["todo", "doing", "review", "paused", "blocked", "done"]
+REVIEWED = ["Dev", "Design", "QA", "Security"]  # their work needs a supervisor before it counts
 WHO = ["manager", "owner"]
 HEADER = ("# Queue\n\nOne task per role at a time. Priorities: Urgent (stops everything), High, Normal, Low. "
           "`done` means built AND tested; the note then holds the evidence. Edit rows only.\n\n"
-          "| id | task | role | priority | needs | status | by | note |\n|---|---|---|---|---|---|---|---|\n")
+          "| id | task | role | priority | needs | status | by | note | tries |\n|---|---|---|---|---|---|---|---|---|\n")
 
 
 @dataclass
@@ -41,12 +47,13 @@ class Task:
     status: str = "todo"
     by: str = "manager"
     note: str = ""
+    tries: int = 0
 
 
 def serialize(tasks) -> str:
     rows = []
     for x in tasks:
-        cells = [x.id, x.title, x.role, x.priority, ", ".join(x.needs) or "-", x.status, x.by, x.note]
+        cells = [x.id, x.title, x.role, x.priority, ", ".join(x.needs) or "-", x.status, x.by, x.note, x.tries]
         rows.append("| " + " | ".join(str(c).replace("|", "/") for c in cells) + " |")
     return HEADER + "\n".join(rows) + ("\n" if rows else "")
 
@@ -59,9 +66,10 @@ def parse(text: str) -> list:
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
         if len(cells) < 7 or cells[0] == "id" or set(cells[0]) <= {"-"}:
             continue
-        cells += [""] * (8 - len(cells))
+        cells += [""] * (9 - len(cells))
         needs = [n.strip() for n in cells[4].split(",") if n.strip() and n.strip() != "-"]
-        tasks.append(Task(cells[0], cells[1], cells[2], cells[3], needs, cells[5], cells[6], cells[7]))
+        tasks.append(Task(cells[0], cells[1], cells[2], cells[3], needs, cells[5], cells[6], cells[7],
+                          int(cells[8]) if cells[8].isdigit() else 0))
     return tasks
 
 
@@ -138,8 +146,45 @@ def finish(tasks, task_id, evidence):
     if not str(evidence).strip():
         raise ValueError("finishing needs evidence that it was tested")
     task = _find(tasks, task_id)
+    if task.role in REVIEWED:
+        raise ValueError(f"{task.role} work needs a supervisor: submit it, then approve")
     task.status, task.note = "done", str(evidence).strip()
     _resume_if_clear(tasks)
+    return task
+
+
+def submit(tasks, task_id):
+    task = _find(tasks, task_id)
+    if task.status != "doing":
+        raise ValueError(f"{task_id} is {task.status}: only a task in progress can be submitted")
+    task.status, task.note = "review", ""
+    return task
+
+
+def approve(tasks, task_id, evidence):
+    if not str(evidence).strip():
+        raise ValueError("approving needs evidence that the supervisor ran the tests")
+    task = _find(tasks, task_id)
+    if task.status != "review":
+        raise ValueError(f"{task_id} is {task.status}: only work waiting for review can be approved")
+    task.status, task.note = "done", str(evidence).strip()
+    _resume_if_clear(tasks)
+    return task
+
+
+def reject(tasks, task_id, reason):
+    task = _find(tasks, task_id)
+    if task.status != "review":
+        raise ValueError(f"{task_id} is {task.status}: only work waiting for review can be rejected")
+    task.tries += 1
+    if task.tries >= 3:
+        task.status = "blocked"
+        task.note = f"owner decision needed: rejected {task.tries} times, last reason: {reason}"
+    else:
+        task.status = "todo"
+        task.note = f"rejected ({task.tries}): {reason}"
+        if task.priority in ("Normal", "Low"):
+            task.priority = "High"
     return task
 
 
@@ -159,7 +204,7 @@ def placar(tasks) -> dict:
     total = len(tasks)
     done = sum(1 for x in tasks if x.status == "done")
     building = [{"id": x.id, "title": x.title, "status": x.status, "note": x.note}
-                for x in tasks if x.status in ("doing", "paused", "blocked")]
+                for x in tasks if x.status in ("doing", "review", "paused", "blocked")]
     return {"total": total, "done": done, "percent": done * 100 // total if total else 0,
             "in_construction": building, "waiting": sum(1 for x in tasks if x.status == "todo")}
 
@@ -202,6 +247,32 @@ def validate(tasks) -> list:
     if any(walk(x.id) for x in tasks):
         problems.append("cycle in dependencies")
     return problems
+
+
+def release_problems(tasks, owner_ok) -> list:
+    problems = [f"{x.id} ({x.role}) is {x.status}: {x.title}" for x in tasks if x.role in REVIEWED and x.status != "done"]
+    for role in ("QA", "Security"):
+        if not any(x.role == role and x.status == "done" for x in tasks):
+            problems.append(f"no {role} task is done and approved")
+    if not owner_ok:
+        problems.append("the owner's final test is not recorded (the owner must say yes, then: release-ok)")
+    return problems
+
+
+RELEASE_PATTERNS = [r"\bgit\s+push\b", r"\bgit\s+tag\b", r"\bnpm\s+publish\b", r"\bgh\s+release\b",
+                    r"\btwine\s+upload\b", r"\bdocker\s+push\b", r"\bcargo\s+publish\b",
+                    r"\bwrangler\s+(deploy|publish)\b", r"\bgh\s+pr\s+merge\b"]
+
+
+def is_release_command(command) -> bool:
+    return any(re.search(pattern, command or "") for pattern in RELEASE_PATTERNS)
+
+
+def owner_ok(project) -> bool:
+    try:
+        return bool(json.loads((Path(project) / ".crewcraft" / "liberacao.json").read_text(encoding="utf-8")).get("owner_ok"))
+    except (OSError, ValueError):
+        return False
 
 
 def _queue_path(project: Path) -> Path:
@@ -267,6 +338,29 @@ def main(argv) -> int:
             task = finish(tasks, rest[0], rest[1] if len(rest) > 1 else "")
             log_event(project, task, "finish", evidence=task.note)
             print(f"{task.id} done and tested")
+        elif command == "submit":
+            task = submit(tasks, rest[0])
+            log_event(project, task, "submit")
+            print(f"{task.id} waits for the supervisor")
+        elif command == "approve":
+            by = _option(rest, "--by", "supervisor")
+            task = approve(tasks, rest[0], rest[1] if len(rest) > 1 else "")
+            log_event(project, task, "approve", by=by, evidence=task.note)
+            print(f"{task.id} approved: done and tested")
+        elif command == "reject":
+            by = _option(rest, "--by", "supervisor")
+            task = reject(tasks, rest[0], rest[1] if len(rest) > 1 else "no reason given")
+            log_event(project, task, "reject", by=by, reason=task.note)
+            print(f"{task.id} sent back ({task.status}, try {task.tries})")
+        elif command == "release-check":
+            problems = release_problems(tasks, owner_ok(project))
+            print("\n".join(problems) if problems else "OK: release allowed")
+            return 1 if problems else 0
+        elif command == "release-ok":
+            (project / ".crewcraft" / "liberacao.json").write_text(json.dumps(
+                {"owner_ok": True, "note": rest[0] if rest else "", "time": datetime.now(timezone.utc).isoformat(timespec="seconds")},
+                ensure_ascii=False), encoding="utf-8")
+            print("owner's final test recorded")
         elif command == "priority":
             by = _option(rest, "--by", "manager")
             task = set_priority(tasks, rest[0], rest[1], by)

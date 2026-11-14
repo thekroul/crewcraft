@@ -71,6 +71,29 @@ def check_plugin(root: Path) -> list[str]:
         if not fields.get("description", "").startswith("Use when"):
             errors.append(f"skills/{folder}: description must start with 'Use when'")
 
+    for agent in sorted((root / "agents").glob("*.md")):
+        fields = _frontmatter(agent)
+        if not fields:
+            errors.append(f"agents/{agent.stem}: no frontmatter")
+            continue
+        if fields.get("name") != agent.stem:
+            errors.append(f"agents/{agent.stem}: frontmatter name must equal the file name")
+        if not fields.get("description"):
+            errors.append(f"agents/{agent.stem}: description is required")
+        if agent.stem.startswith("supervisor"):
+            bad = [t.strip() for t in fields.get("tools", "").split(",") if t.strip() in ("Edit", "Write", "NotebookEdit")]
+            if bad:
+                errors.append(f"agents/{agent.stem}: supervisors only guarantee, they must not have {', '.join(bad)}")
+
+    hooks = root / "hooks" / "hooks.json"
+    if hooks.is_file():
+        try:
+            commands = [h.get("command", "") for group in json.loads(hooks.read_text(encoding="utf-8")).get("hooks", {}).values()
+                        for entry in group for h in entry.get("hooks", [])]
+            errors += [f"hooks/hooks.json: command must use CLAUDE_PLUGIN_ROOT: {c}" for c in commands if "CLAUDE_PLUGIN_ROOT" not in c]
+        except (ValueError, AttributeError):
+            errors.append("hooks/hooks.json: invalid JSON or structure")
+
     for command in sorted((root / "commands").glob("*.md")):
         fields = _frontmatter(command)
         if not fields or not fields.get("description"):

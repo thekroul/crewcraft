@@ -4,7 +4,7 @@
 
 **A Claude Code plugin that asks before it builds, shows you the look before it codes, and talks to you at your own level. A crew of specialist roles is planned.**
 
-> Status: early (v0.1.0). Four skills and one command work today. Roles, delivery gates and project research are planned and are **not** in this version.
+> Status: early (v0.1.0). Five skills, a crew of nine agents, a release gate and an optional pixel office work today. Project research (competitors, tools, current documentation) is planned and is **not** in this version.
 
 ## Why
 
@@ -20,11 +20,19 @@ Ask an AI for "a calculator" and you get *its* idea of a calculator. You correct
 | `ficha-do-projeto` | Keeps everything about a project inside that project, in a `.crewcraft/` folder: decisions, open questions, visual profile. Never overwrites what you edited. |
 | `prototipo-visual` | Shows the look in two separate rounds, structure first, then theme and colors, and blocks building until you approve. |
 | `gerente` | The manager: turns your decisions into tasks, keeps a queue with priorities (Urgent stops everything), allows one task per role at a time, and reports honestly: only work that is done and tested counts toward the percentage. |
+| `ambiente` | Finds what is installed on this computer and, for each job (testing in a clean environment, browser checks, version control), lists the options in order with each one's weakness in plain words. Installs nothing without approval. |
+| `/crewcraft:escritorio` | Optional pixel office (off unless you start it): each role at a desk, the task above the head of whoever works, idle roles walk, drink water and chat. Read-only and local. |
 | `/crewcraft:comecar` | Command that starts the conversation: `/crewcraft:comecar I want a dashboard for my team` |
 
 Claude usually starts the conversation by itself when you ask for something to be built, but that is not guaranteed. `/crewcraft:comecar` always starts it.
 
 Skill names are Portuguese (`conversa` = conversation, `ficha-do-projeto` = project file, `prototipo-visual` = visual prototype). Claude answers in **your** language.
+
+## The crew and the release gate
+
+Each role is a separate agent with its own instructions: `dev`, `design`, `qa`, `security`, `support`, `marketing`, and the supervisors `supervisor-dev`, `supervisor-design` and `supervisor-teste`. Supervisors cannot edit anything: they only run the checks themselves and approve or reject. Each role holds one task at a time, and only work that a supervisor approved counts as done. The third rejection of the same task goes to you.
+
+A hook blocks release commands (`git push`, `npm publish`, deploys) in a project with a Crewcraft queue until every Dev, Design, QA and Security task is approved and you recorded your final test. The hook needs Python on the PATH; without Python it lets everything through, so it never traps you.
 
 ### Structure first, then theme
 
@@ -55,11 +63,11 @@ Replace `<owner>` with the GitHub account that hosts this repository. Python 3 i
 
 ## Privacy
 
-Crewcraft adds no network calls of its own. Everything about your project stays in your project's `.crewcraft/` folder, and your level profile stays on your computer, never inside the plugin. The helper script and the skills do not write inside any folder named "Não mexer" ("do not touch"), and they ask which folder is the project before creating `.crewcraft/`.
+Crewcraft adds no network calls of its own. Everything about your project stays in your project's `.crewcraft/` folder, and your level profile stays on your computer, never inside the plugin. The helper script and the skills do not write inside any folder named "Não mexer" ("do not touch"), and they ask which folder is the project before creating `.crewcraft/`. Customer logs are masked (ids, e-mails, passwords, addresses) before the support role reads them, and the optional office page listens on 127.0.0.1 only.
 
 ## Planned, not included yet
 
-A manager that plans and orders the work; developer, designer, QA and security roles with one task each at a time; supervisors that block delivery until it is tested; project research (competitors, tools, current documentation) that ends in a short report for you to approve.
+Project research (competitors, tools, current documentation, papers) that ends in a short report for you to approve, and skills tailored per project from that research.
 
 ## License
 

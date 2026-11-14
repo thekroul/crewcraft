@@ -3,8 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.fila import (Task, add, finish, load, main, next_task, parse, placar,
-                          serialize, set_priority, start, validate)
+from scripts.fila import (Task, add, approve, finish, load, main, next_task, parse, placar,
+                          serialize, set_priority, start, submit, validate)
 
 
 def t(id, role="Dev", priority="Normal", needs=(), status="todo", note="", title=None):
@@ -45,7 +45,8 @@ class QueueRulesTests(unittest.TestCase):
         start(tasks, "T2")
         self.assertEqual([x.status for x in tasks], ["paused", "doing"])
         self.assertIn("T2", tasks[0].note)
-        finish(tasks, "T2", "hotfix verified on a clean machine")
+        submit(tasks, "T2")
+        approve(tasks, "T2", "hotfix verified on a clean machine")
         self.assertEqual([x.status for x in tasks], ["doing", "done"])
 
     def test_raising_to_urgent_pauses_running_work_and_records_who(self):
@@ -55,7 +56,7 @@ class QueueRulesTests(unittest.TestCase):
         self.assertEqual(tasks[1].by, "owner")
 
     def test_finish_needs_evidence(self):
-        tasks = [t("T1", status="doing")]
+        tasks = [t("T1", role="Support", status="doing")]
         with self.assertRaises(ValueError):
             finish(tasks, "T1", "  ")
 
@@ -106,13 +107,14 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(self.run_cli("add", "Test login", "QA", "--needs", "T1"), 0)
         self.assertEqual(self.run_cli("start", "T1"), 0)
         self.assertEqual(self.run_cli("start", "T2"), 1)          # dependency not done
-        self.assertEqual(self.run_cli("finish", "T1", "unit tests green"), 0)
+        self.assertEqual(self.run_cli("submit", "T1"), 0)
+        self.assertEqual(self.run_cli("approve", "T1", "unit tests green", "--by", "supervisor-dev"), 0)
         self.assertEqual(self.run_cli("next", "QA"), 0)
         tasks = load(self.project)
         self.assertEqual([x.status for x in tasks], ["done", "todo"])
         events = [json.loads(l) for l in
                   (self.project / ".crewcraft" / "eventos.jsonl").read_text(encoding="utf-8").splitlines()]
-        self.assertEqual([e["event"] for e in events], ["add", "add", "start", "finish"])
+        self.assertEqual([e["event"] for e in events], ["add", "add", "start", "submit", "approve"])
         self.assertTrue(all({"time", "role", "task"} <= set(e) for e in events))
 
     def test_init_does_not_overwrite_and_refuses_read_only_folder(self):
