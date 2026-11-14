@@ -4,7 +4,7 @@
 
 **A Claude Code plugin that asks before it builds, shows you the look before it codes, and talks to you at your own level. A crew of specialist roles is planned.**
 
-> Status: early (v0.1.0). Three skills and one command work today. Roles, delivery gates and project research are planned and are **not** in this version.
+> Status: early (v0.1.0). Four skills and one command work today. Roles, delivery gates and project research are planned and are **not** in this version.
 
 ## Why
 
@@ -19,6 +19,7 @@ Ask an AI for "a calculator" and you get *its* idea of a calculator. You correct
 | `conversa` | Talks first. One question at a time, shows the kinds of thing that exist, records every decision as yours or as a suggestion, and builds nothing until the choices are settled. |
 | `ficha-do-projeto` | Keeps everything about a project inside that project, in a `.crewcraft/` folder: decisions, open questions, visual profile. Never overwrites what you edited. |
 | `prototipo-visual` | Shows the look in two separate rounds, structure first, then theme and colors, and blocks building until you approve. |
+| `gerente` | The manager: turns your decisions into tasks, keeps a queue with priorities (Urgent stops everything), allows one task per role at a time, and reports honestly: only work that is done and tested counts toward the percentage. |
 | `/crewcraft:comecar` | Command that starts the conversation: `/crewcraft:comecar I want a dashboard for my team` |
 
 Claude usually starts the conversation by itself when you ask for something to be built, but that is not guaranteed. `/crewcraft:comecar` always starts it.

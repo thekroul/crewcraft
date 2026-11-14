@@ -28,6 +28,17 @@ class SkillRulesTests(unittest.TestCase):
         self.assertIn("without a separate question", text)
         self.assertIn("several separate projects", text)
 
+    def test_manager_skill_rules(self):
+        text = skill("gerente")
+        lowered = text.lower()
+        for needle in ["fila.py", "Urgent", "one task per role", "--by owner", "placar", "Não mexer",
+                       "which folder is the project", "never writes product code", "evidence",
+                       "when the owner reports a problem or declares something urgent"]:
+            self.assertIn(needle.lower(), lowered, needle)
+
+    def test_manager_description_starts_with_use_when(self):
+        self.assertTrue(skill("gerente").split("description:", 1)[1].lstrip().startswith("Use when"))
+
     def test_visual_skill_asks_one_question_at_a_time(self):
         self.assertIn("one question per message", skill("prototipo-visual").lower())
 

@@ -4,7 +4,7 @@
 
 **Um plugin do Claude Code que pergunta antes de construir, mostra o visual antes de programar e conversa no seu nível. Uma equipe de cargos especialistas está planejada.**
 
-> Estado: inicial (v0.1.0). Três skills e um comando funcionam hoje. Cargos, portões de entrega e pesquisa do projeto estão planejados e **não** fazem parte desta versão.
+> Estado: inicial (v0.1.0). Quatro skills e um comando funcionam hoje. Cargos, portões de entrega e pesquisa do projeto estão planejados e **não** fazem parte desta versão.
 
 ## Por quê
 
@@ -19,6 +19,7 @@ Peça "uma calculadora" a uma IA e você recebe a ideia **dela** de calculadora.
 | `conversa` | Conversa primeiro. Uma pergunta por vez, mostra os tipos que existem, grava cada decisão como sua ou como sugestão, e não constrói nada até as escolhas estarem fechadas. |
 | `ficha-do-projeto` | Guarda tudo de um projeto dentro dele, numa pasta `.crewcraft/`: decisões, perguntas em aberto, perfil visual. Nunca sobrescreve o que você editou. |
 | `prototipo-visual` | Mostra o visual em duas rodadas separadas, primeiro a estrutura, depois tema e cores, e bloqueia a construção até você aprovar. |
+| `gerente` | O gerente: transforma suas decisões em tarefas, mantém uma fila com prioridades (Urgente para tudo), permite uma tarefa por cargo de cada vez e informa com honestidade: só o que está pronto e testado conta na porcentagem. |
 | `/crewcraft:comecar` | Comando que inicia a conversa: `/crewcraft:comecar quero um painel para minha equipe` |
 
 O Claude costuma iniciar a conversa sozinho quando você pede para construir algo, mas isso não é garantido. `/crewcraft:comecar` sempre inicia.
