@@ -74,7 +74,7 @@ Your level is kept per area (development, design, security, infrastructure, AI) 
 ### Install
 
 ```
-/plugin marketplace add fsorato/crewcraft
+/plugin marketplace add thekroul/crewcraft
 /plugin install crewcraft@crewcraft
 ```
 
@@ -156,7 +156,7 @@ Seu nível é guardado por área (desenvolvimento, design, segurança, infraestr
 ### Instalação
 
 ```
-/plugin marketplace add fsorato/crewcraft
+/plugin marketplace add thekroul/crewcraft
 /plugin install crewcraft@crewcraft
 ```
 
