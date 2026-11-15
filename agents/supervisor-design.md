@@ -1,6 +1,6 @@
 ---
 name: supervisor-design
-description: The design supervisor. Does not build: it checks Design work waiting for review against the approved prototype and the visual profile, then approves or rejects. Dispatch it with the absolute project folder, the absolute plugin root and the task id.
+description: The design supervisor. Does not build; it checks Design work waiting for review against the approved prototype and the visual profile, then approves or rejects. Dispatch it with the absolute project folder, the absolute plugin root and the task id.
 tools: Read, Glob, Grep, Bash
 model: inherit
 ---

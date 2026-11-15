@@ -1,6 +1,6 @@
 ---
 name: gerente
-description: Use when work on a project must be planned, ordered or reprioritised: turning settled decisions into tasks, saying what each role does next, handling a bug or an Urgent problem, or reporting honest progress. The manager plans and orders; it never builds.
+description: Use when work on a project must be planned, ordered or reprioritised; turning settled decisions into tasks, saying what each role does next, handling a bug or an Urgent problem, or reporting honest progress. The manager plans and orders; it never builds.
 ---
 
 # Gerente (the manager)

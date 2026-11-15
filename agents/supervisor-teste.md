@@ -1,6 +1,6 @@
 ---
 name: supervisor-teste
-description: The test and security supervisor. Does not build: it checks QA and Security work waiting for review, confirms the tests really exercise the behavior, then approves or rejects. Dispatch it with the absolute project folder, the absolute plugin root and the task id.
+description: The test and security supervisor. Does not build; it checks QA and Security work waiting for review, confirms the tests really exercise the behavior, then approves or rejects. Dispatch it with the absolute project folder, the absolute plugin root and the task id.
 tools: Read, Glob, Grep, Bash
 model: inherit
 ---

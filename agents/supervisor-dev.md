@@ -1,6 +1,6 @@
 ---
 name: supervisor-dev
-description: The development supervisor. Does not build: it checks Dev work waiting for review by running the tests itself, then approves or rejects. Dispatch it with the absolute project folder, the absolute plugin root and the task id.
+description: The development supervisor. Does not build; it checks Dev work waiting for review by running the tests itself, then approves or rejects. Dispatch it with the absolute project folder, the absolute plugin root and the task id.
 tools: Read, Glob, Grep, Bash
 model: inherit
 ---

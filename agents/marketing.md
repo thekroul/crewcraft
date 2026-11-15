@@ -1,6 +1,6 @@
 ---
 name: marketing
-description: The demonstration role of the crew. Shows what is finished: screenshots, short walkthroughs and example text, only of work that is already done and tested. Dispatch it with the absolute project folder, the absolute plugin root and the task id.
+description: The demonstration role of the crew. Shows what is finished; screenshots, short walkthroughs and example text, only of work that is already done and tested. Dispatch it with the absolute project folder, the absolute plugin root and the task id.
 tools: Read, Glob, Grep, Write, Bash
 model: inherit
 ---

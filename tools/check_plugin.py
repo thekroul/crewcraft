@@ -25,6 +25,29 @@ def _frontmatter(path: Path):
     return fields
 
 
+def _yaml_problem(path: Path):
+    """The header must be real YAML: a plain description containing a colon and a space is silently dropped by Claude Code."""
+    match = FRONTMATTER.match(path.read_text(encoding="utf-8").replace(chr(13) + chr(10), chr(10)))
+    if not match:
+        return None
+    try:
+        import yaml
+    except ImportError:
+        yaml = None
+    if yaml:
+        try:
+            yaml.safe_load(match.group(1))
+        except Exception as exc:
+            return f"YAML cannot parse the header ({str(exc).splitlines()[0]})"
+        return None
+    for line in match.group(1).split(chr(10)):
+        if line.startswith("description:"):
+            value = line.split(":", 1)[1].strip()
+            if value and value[0] not in (chr(34), chr(39)) and (": " in value or " #" in value):
+                return "YAML cannot parse a plain description containing a colon and a space or a hash: quote it or rephrase"
+    return None
+
+
 def check_plugin(root: Path) -> list[str]:
     errors: list[str] = []
     manifest = root / ".claude-plugin" / "plugin.json"
@@ -62,6 +85,9 @@ def check_plugin(root: Path) -> list[str]:
 
     for skill in sorted((root / "skills").glob("*/SKILL.md")):
         folder = skill.parent.name
+        problem = _yaml_problem(skill)
+        if problem:
+            errors.append(f"skills/{folder}: {problem}")
         fields = _frontmatter(skill)
         if fields is None:
             errors.append(f"skills/{folder}: SKILL.md has no frontmatter")
@@ -72,6 +98,9 @@ def check_plugin(root: Path) -> list[str]:
             errors.append(f"skills/{folder}: description must start with 'Use when'")
 
     for agent in sorted((root / "agents").glob("*.md")):
+        problem = _yaml_problem(agent)
+        if problem:
+            errors.append(f"agents/{agent.stem}: {problem}")
         fields = _frontmatter(agent)
         if not fields:
             errors.append(f"agents/{agent.stem}: no frontmatter")
@@ -95,6 +124,9 @@ def check_plugin(root: Path) -> list[str]:
             errors.append("hooks/hooks.json: invalid JSON or structure")
 
     for command in sorted((root / "commands").glob("*.md")):
+        problem = _yaml_problem(command)
+        if problem:
+            errors.append(f"commands/{command.stem}: {problem}")
         fields = _frontmatter(command)
         if not fields or not fields.get("description"):
             errors.append(f"commands/{command.stem}: frontmatter needs a description")

@@ -1,6 +1,6 @@
 ---
 name: pesquisa
-description: Use when a project, new or existing, must be checked against the market before its look is shown or its work is planned: competitors and how they are built, tools and skills that could help, current documentation, and a verdict on what is already installed. Produces a report for the owner to approve.
+description: Use when a project, new or existing, must be checked against the market before its look is shown or its work is planned; competitors and how they are built, tools and skills that could help, current documentation, and a verdict on what is already installed. Produces a report for the owner to approve.
 ---
 
 # Pesquisa (look outside before shaping the project)
