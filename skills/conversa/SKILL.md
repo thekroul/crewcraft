@@ -35,6 +35,14 @@ Keep the keys of the template exactly as they are (`development:`, `design:`, `s
 
 People cannot choose between things they do not know exist. Before asking "which kind?", lay out the kinds that exist, three to five, one line each saying who it suits, in the person's vocabulary. Then ask which one fits. Do this for the type of product, the look, the platform, and where data is kept. For an expert, replace the list with the two or three trade-offs that matter.
 
+## The operation profile (proportional to the risk)
+
+Some projects can hurt: a public system that handles money can lose it through one security hole or one failure under load. A small offline tool cannot. So ask, one question per message and in the owner's words, only what the risk calls for, and record the answers in `.crewcraft/operacao.md` (create it with `python <plugin root>/scripts/robustez.py <absolute project folder> init-profile`; the plugin root is two folders above this skill's folder):
+
+1. How exposed is it: only this computer (local), an internal network, or a public IP address? Ask this and the type of data first. If it is local and handles no data (a calculator, a converter), say plainly that it needs no security or stress work, fill the profile with one user, local, no data and medium, and move on. That is what proportional means: never invent work the risk does not call for.
+2. Otherwise continue: how many people will use it (typical, and at the same time at the peak), what data it handles (none, personal, financial), the security level, meaning how strong the security must be (medium or robust, with the consequence of each in plain words), how available it must be (best effort, business hours, always on), how many users the stress test should reach (suggest twice the peak and explain why), and what a failure would cost, in the owner's own words.
+3. Run `validate-profile`. The crew derives the checks to pass before a release from this file.
+
 ## Order of questions (skip what is already answered)
 
 1. What is it, who uses it, how often.

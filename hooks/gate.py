@@ -19,12 +19,13 @@ def main() -> int:
         if payload.get("tool_name") != "Bash":
             return 0
         from fila import is_release_command, load, owner_ok, release_problems
+        from robustez import problems as robust_problems
         if not is_release_command(payload.get("tool_input", {}).get("command", "")):
             return 0
         start = Path(payload.get("cwd") or os.getcwd()).resolve()
         for folder in [start, *start.parents]:
             if (folder / ".crewcraft" / "fila.md").is_file():
-                problems = release_problems(load(folder), owner_ok(folder))
+                problems = release_problems(load(folder), owner_ok(folder)) + robust_problems(folder)
                 if problems:
                     sys.stderr.write("Release blocked by Crewcraft. Still missing:\n- " + "\n- ".join(problems) +
                                      "\nExplain this to the owner in plain words and offer the next step.\n")

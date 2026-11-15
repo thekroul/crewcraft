@@ -18,7 +18,7 @@ Ask an AI for "a calculator" and you get *its* idea of a calculator. You correct
 
 ### What it recommends
 
-For each project, the research recommends **plugins, skills and MCP servers to install for that project**, each with a verdict (use, improve or avoid), the reason, the source, the date and the license. Crewcraft itself ships none of them: nothing third-party is bundled in this repository. On your computer, what you approve is downloaded and set up for that project only, after it tells you the filename, the source and the size. Anything found online is read and analysed first, never run blindly.
+For each project, the research recommends **plugins, skills and MCP servers to install for that project**, each with a verdict (use, improve or avoid), the reason, the source, the date and the license. Crewcraft itself ships none of them: nothing third-party is bundled in this repository. On your computer, what you approve is downloaded and set up for that project only, after it tells you the filename, the source and the size. Anything found online is read and analysed first, never run blindly. For projects with a lot of documentation (the plan, the research, the decisions) it also recommends a local search over those documents (RAG), and says plainly when it is not needed.
 
 ### What is inside
 
@@ -50,7 +50,7 @@ A hook blocks release commands (`git push`, `npm publish`, deploys) in a project
 
 #### The office
 
-![The pixel office: roles at their desks, the task above the head of whoever works, and the project percentage on the wall](docs/img/escritorio.png)
+![The pixel office: roles at their desks, the task above the head of whoever works, and the project percentage on the wall](docs/img/escritorio.gif)
 
 The office is optional: run `/crewcraft:escritorio` in a project that has a queue and open the address it prints. It is read-only and runs only on your computer.
 
@@ -65,6 +65,10 @@ Then the same structure under three really different themes. Only the theme file
 ![The same layout in three themes: light system, light with a red accent, and dark](docs/img/temas.png)
 
 If you say "it looks like AI made it", Crewcraft changes direction instead of nudging the same palette, asks for a reference, and adds what you disliked to a banned list in your project's visual profile.
+
+### Robust testing, proportional to the risk
+
+The crew asks how many people will use the project, how exposed it is (local, internal network or public IP), what data it handles, how strong the security must be and how many users to stress-test with, and writes it in `.crewcraft/operacao.md`. From that it derives the checks that must pass before a release: a small offline calculator gets two (input and functional variations); a public system that handles money gets nineteen (injection tests on every input, authentication and permission tests, abuse and denial-of-service resistance, load and stress tests at your number of users and at double it, soak and recovery tests, money calculations, an audit trail). Each check is recorded with evidence, the supervisor re-runs a sample, and the release gate stays closed until every required check passed or you waived it. Load, stress and attack-style tests run only against the project's own environment. The research also checks how robust the competitors are, and what the smallest and the largest version of this kind of system need, before recommending anything.
 
 ### It adapts to you
 
@@ -109,7 +113,7 @@ Peça "uma calculadora" a uma IA e você recebe a ideia **dela** de calculadora.
 
 ### O que ele recomenda
 
-Para cada projeto, a pesquisa recomenda **plugins, skills e servidores MCP para instalar naquele projeto**, cada um com um veredito (usar, melhorar ou evitar), o motivo, a fonte, a data e a licença. O próprio Crewcraft não traz nenhum deles: nada de terceiros vem junto neste repositório. No seu computador, o que você aprovar é baixado e configurado só para aquele projeto, depois de ele dizer o nome do arquivo, a origem e o tamanho. Tudo que vem da internet é lido e analisado antes, nunca executado às cegas.
+Para cada projeto, a pesquisa recomenda **plugins, skills e servidores MCP para instalar naquele projeto**, cada um com um veredito (usar, melhorar ou evitar), o motivo, a fonte, a data e a licença. O próprio Crewcraft não traz nenhum deles: nada de terceiros vem junto neste repositório. No seu computador, o que você aprovar é baixado e configurado só para aquele projeto, depois de ele dizer o nome do arquivo, a origem e o tamanho. Tudo que vem da internet é lido e analisado antes, nunca executado às cegas. Para projetos com muita documentação (o plano, a pesquisa, as decisões), recomenda também uma busca local nesses documentos (RAG), e diz com clareza quando não é necessária.
 
 ### O que tem dentro
 
@@ -141,7 +145,7 @@ Um gancho bloqueia comandos de liberação (`git push`, `npm publish`, deploys) 
 
 #### O escritório
 
-![O escritório pixel: cargos nas mesas, a tarefa em cima da cabeça de quem trabalha e a porcentagem do projeto na parede](docs/img/escritorio.png)
+![O escritório pixel: cargos nas mesas, a tarefa em cima da cabeça de quem trabalha e a porcentagem do projeto na parede](docs/img/escritorio.gif)
 
 O escritório é opcional: rode `/crewcraft:escritorio` num projeto que tenha fila e abra o endereço que ele mostrar. Só lê e roda apenas no seu computador.
 
@@ -156,6 +160,10 @@ Depois, a mesma estrutura com três temas bem diferentes. Só o arquivo de tema 
 ![O mesmo layout em três temas: claro de sistema, claro com destaque vermelho e escuro](docs/img/temas.png)
 
 Se você disser "parece feito por IA", o Crewcraft muda de direção em vez de ajustar a mesma paleta, pede uma referência e anota o que você não gostou numa lista de proibidos do perfil visual do projeto.
+
+### Testes de robustez, proporcionais ao risco
+
+A equipe pergunta quantas pessoas vão usar o projeto, o quanto ele fica exposto (local, rede interna ou IP público), que dados ele trata, quão forte a segurança precisa ser e com quantos usuários fazer o teste de estresse, e grava tudo em `.crewcraft/operacao.md`. A partir disso ela deriva as checagens que precisam passar antes de uma liberação: uma calculadora pequena e sem internet recebe duas (variações de entrada e de funcionamento); um sistema público que lida com dinheiro recebe dezenove (testes de injeção em toda entrada, de autenticação e permissão, resistência a abuso e a negação de serviço, testes de carga e de estresse no seu número de usuários e no dobro, de longa duração e de recuperação, cálculo de valores, trilha de auditoria). Cada checagem é registrada com evidência, o supervisor refaz uma amostra, e o portão de liberação fica fechado até que toda checagem exigida passe ou você dispense. Testes de carga, estresse e ataque rodam só no ambiente do próprio projeto. A pesquisa também confere o quanto os concorrentes são robustos, e o que a menor e a maior versão desse tipo de sistema exigem, antes de recomendar qualquer coisa.
 
 ### Ele se adapta a você
 

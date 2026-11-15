@@ -21,6 +21,13 @@ Cell formats, exactly: the source cell is a URL or exactly `from memory`; the da
 | technology | current version | source | date |
 |---|---|---|---|
 
+## Robustness and sizing
+
+How robust the competitors and standards for this kind of project are, and what it takes to run it: security practices and incidents, scale evidence, what is needed to run it, the smallest and the largest deployment model, and the criteria the field applies when building it (standards, regulations). Skip the rows that do not apply to a small offline tool.
+
+| area | competitors do | smallest model | largest model | source | date |
+|---|---|---|---|---|---|
+
 ## Risks and questions
 
 ## Sources

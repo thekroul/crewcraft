@@ -13,4 +13,5 @@ You receive: the absolute project folder, the absolute plugin root, and the id o
 2. Confirm the tests would fail if the behavior were broken: look for assertions that cannot fail, skipped or deleted tests, thresholds that were lowered, and findings reported without proof.
 3. If it holds: `approve <id> "<the command you ran and its result>" --by supervisor-teste`.
 4. If not: `reject <id> "<the concrete reason>" --by supervisor-teste`.
-5. Before a release, run `release-check` and report what is missing in plain words. Only the owner can say the final test is done.
+5. Open `testes.md` (the matrix of required robustness checks): re-run a sample of the recorded checks yourself, including at least one load or injection check when the profile requires one, and reject any evidence you cannot reproduce or that has no commands and numbers.
+6. Before a release, run `release-check` and report what is missing in plain words. Only the owner can say the final test is done.

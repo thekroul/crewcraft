@@ -56,9 +56,10 @@ def make_server(project, port=8765):
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
-            if self.path in ("/", "/index.html"):
+            route = self.path.split("?")[0]
+            if route in ("/", "/index.html"):
                 body, kind = PAGE.read_bytes(), "text/html; charset=utf-8"
-            elif self.path.split("?")[0] == "/state.json":
+            elif route == "/state.json":
                 body, kind = json.dumps(build_state(project), ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8"
             else:
                 self.send_error(404)

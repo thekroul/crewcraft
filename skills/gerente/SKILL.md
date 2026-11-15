@@ -30,7 +30,15 @@ If a decision is missing, ask the owner one question (see `conversa`); do not gu
 
 ## Step documents
 
-Before adding tasks, write `.crewcraft/plano.md` from `<plugin root>/templates/plano.md`: one stage per deliverable, each with **What to create**, **How**, **Deliverable**, **Acceptance test** and **Needs**, written so that a role that never talked to the owner can act on it. Run `python <plugin root>/scripts/plano.py <absolute project folder> validate` and fix what it reports. Every task in the queue belongs to a stage, and each role reads its stage before starting.
+Before adding tasks, write `.crewcraft/plano.md` from `<plugin root>/templates/plano.md`: one stage per deliverable, each with **What to create**, **How**, **Deliverable**, **Acceptance test**, **Variations to test**, **Security and load checks** and **Needs** (write "none: reason" where a check does not apply), written so that a role that never talked to the owner can act on it. Run `python <plugin root>/scripts/plano.py <absolute project folder> validate` and fix what it reports. Every task in the queue belongs to a stage, and each role reads its stage before starting.
+
+## Robustness, proportional to the risk
+
+The operation profile (`.crewcraft/operacao.md`, filled during the conversation) says how many people will use the project, how exposed it is, what data it handles, how strong the security must be and how many users to stress-test with. After it validates, run `python <plugin root>/scripts/robustez.py <absolute project folder> init`: it derives the checks the project must pass (a small offline tool gets two; a public system with money gets nineteen) into `.crewcraft/testes.md`. Create queue tasks for them: Dev, QA and Security each take the checks of their role, and each check is recorded with real evidence. The release gate stays closed until every required check passed or the owner waived it. Never add work the profile does not require.
+
+## Documentation search (RAG)
+
+The plan, the research and the decisions are documents, not only tasks. After writing the plan run `python <plugin root>/scripts/rag_advice.py <absolute project folder>` and tell the owner the recommendation in plain words: when the documents are large, recommend a local search over them (RAG) and say what it costs; when they are small, say it is not needed. It is a recommendation only: nothing is installed without the owner's approval.
 
 ## Project skills
 

@@ -1,7 +1,7 @@
 """Step documents: every stage of the plan says what to create, how, what is delivered and how it is tested.
 
 Usage: python scripts/plano.py <absolute project folder> validate
-Checks .crewcraft/plano.md: at least one "## Stage N: name", each with the five labelled, non-empty fields.
+Checks .crewcraft/plano.md: at least one "## Stage N: name", each with the seven labelled, non-empty fields (write "none: reason" when a check does not apply).
 """
 import re
 import sys
@@ -12,7 +12,7 @@ try:
 except ImportError:  # run as a plain script
     from init_ficha import _checked_project
 
-FIELDS = ["What to create", "How", "Deliverable", "Acceptance test", "Needs"]
+FIELDS = ["What to create", "How", "Deliverable", "Acceptance test", "Variations to test", "Security and load checks", "Needs"]
 
 
 def validate_plano(text) -> list:

@@ -7,7 +7,7 @@
     {
       "name": "crewcraft",
       "source": "./",
-      "description": "Asks before it builds, researches the market, shows you the look before it codes, and runs a crew with a release gate. Adapts to how much you know."
+      "description": "Asks before it builds, researches the market, shows you the look before it codes, and runs a crew with robustness checks and a release gate. Adapts to how much you know."
     }
   ]
 }

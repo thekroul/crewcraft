@@ -353,7 +353,11 @@ def main(argv) -> int:
             log_event(project, task, "reject", by=by, reason=task.note)
             print(f"{task.id} sent back ({task.status}, try {task.tries})")
         elif command == "release-check":
-            problems = release_problems(tasks, owner_ok(project))
+            try:
+                from scripts.robustez import problems as robust_problems
+            except ImportError:
+                from robustez import problems as robust_problems
+            problems = release_problems(tasks, owner_ok(project)) + robust_problems(project)
             print("\n".join(problems) if problems else "OK: release allowed")
             return 1 if problems else 0
         elif command == "release-ok":

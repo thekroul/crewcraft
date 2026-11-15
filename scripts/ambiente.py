@@ -30,7 +30,7 @@ def reference_libraries(claude_home=None) -> list:
 def detect(which=shutil.which, platform=sys.platform, exists=os.path.exists) -> dict:
     name = "windows" if platform.startswith("win") else "macos" if platform == "darwin" else "linux"
     caps = {"os": name, "python": sys.version.split()[0]}
-    for tool in ["git", "node", "npm", "docker", "vboxmanage", "wsl", "adb", "firefox"]:
+    for tool in ["git", "node", "npm", "docker", "vboxmanage", "wsl", "adb", "firefox", "k6", "ab", "hey", "wrk", "locust", "gitleaks", "semgrep", "trivy", "ollama"]:
         caps[tool] = bool(which(tool))
     caps["edge"] = bool(which("msedge")) or bool(exists(EDGE))
     caps["chrome"] = bool(which("chrome") or which("google-chrome")) or bool(exists(CHROME))
@@ -84,12 +84,26 @@ def options(caps: dict) -> dict:
         _o("Manual check by the owner", True, "Slow, and depends on the person doing it.",
            "The crew prepares a short step-by-step list to follow."),
     ]
+    load = [
+        _o("k6", caps["k6"], "Scripts in JavaScript; it runs from this PC, so it measures this PC's limit as much as the server's.", "Install k6 (a free load testing tool)."),
+        _o("hey", caps["hey"], "Simple request flood only; no realistic user journeys.", "Install hey."),
+        _o("wrk", caps["wrk"], "Raw request rate only; no user journeys.", "Install wrk."),
+        _o("ab (Apache Bench)", caps["ab"], "Basic and old; one URL at a time.", "Install the Apache tools (ab)."),
+        _o("locust", caps["locust"], "Needs Python and a script of the user journey.", "Install locust with pip."),
+        _o("Small script written by the crew", True, "Less realistic and less measured than a real load tool.", "The crew writes it for the project."),
+    ]
+    scan = [
+        _o("gitleaks (secrets)", caps["gitleaks"], "Finds secrets only, not other vulnerabilities.", "Install gitleaks."),
+        _o("semgrep (code patterns)", caps["semgrep"], "Pattern based: misses logic flaws and can raise false alarms.", "Install semgrep with pip."),
+        _o("trivy (dependencies and containers)", caps["trivy"], "Knows published vulnerabilities only.", "Install trivy."),
+        _o("Manual review by the Security role", True, "Depends on the reviewer's attention; no tool evidence.", "The crew does it with the checklist."),
+    ]
     vcs = [_o("Git", caps["git"], "Needs a name and e-mail configured before the first commit.", "Install Git.")]
 
     def ordered(items):
         return [i for i in items if i["available"]] + [i for i in items if not i["available"]]
 
-    return {"clean_test_environment": ordered(clean), "browser_check": ordered(browser), "version_control": ordered(vcs)}
+    return {"clean_test_environment": ordered(clean), "browser_check": ordered(browser), "load_testing": ordered(load), "security_scanning": ordered(scan), "version_control": ordered(vcs)}
 
 
 def render(caps: dict, listing: dict) -> str:
