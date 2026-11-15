@@ -22,7 +22,7 @@ BLOCK = """<!-- crewcraft:start -->
 - Decisions live in `.crewcraft/decisoes.md`; questions in `.crewcraft/perguntas.md`; the research report in `.crewcraft/parecer.md`; the plan in `.crewcraft/plano.md`; the queue in `.crewcraft/fila.md`. Read them before working.
 - Skills for this project are in `.claude/skills/`; use only those that apply.
 - Order of work: conversation, research, the look, the plan, the work, the release. Ask before assuming, one question per message.
-- Never write inside a folder named "Não mexer".
+- Never write inside a folder the owner listed as read-only.
 <!-- crewcraft:end -->
 """
 

@@ -15,26 +15,28 @@ Commands: `init`, `add "<task>" <role> [--priority P] [--needs T1,T2] [--by mana
 
 ## Before anything
 
-Confirm which folder is the project, the same way as in `conversa`: use the working directory when it is clearly one project or a new empty folder, and ask first when it holds several projects. Never write inside a folder named "Não mexer" (or "Nao mexer"). Run `init` if there is no queue yet.
+Confirm which folder is the project, the same way as in `conversa`: use the working directory when it is clearly one project or a new empty folder, and ask first when it holds several projects. Never write inside a folder the owner listed as read-only. Run `init` if there is no queue yet.
 
-## Plan from what was decided
+## Before you plan
 
-Plan only after research: `.crewcraft/decisoes.md` must have an `owner` row "Parecer approved" or "Research skipped". If neither exists, run the skill `pesquisa` first. Use the report's verdicts to choose tools, and its competitors to decide which roles the project needs most.
+The owner's flow is: command, idea, research approved item by item, shaping, then you. Check that `.crewcraft/decisoes.md` has an `owner` row "Parecer approved" (or "Research skipped"), that the operation profile is complete (`robustez.py validate-profile`), and that the look is approved when there is an interface. If anything is missing, run the skill that produces it (`pesquisa`, `conversa` phase B, `prototipo-visual`) instead of guessing. Then create the approved project roles with `cargos.py` (see below).
 
-Read `.crewcraft/decisoes.md`. Turn the settled decisions into tasks, each one deliverable, testable and owned by exactly one role (Dev, Design, QA, Security, Support, Marketing). Add them with `add`, and say what each one needs first (`--needs`):
+## Roadmap and phase documents
+
+Write `.crewcraft/plano.md` from `<plugin root>/templates/plano.md`. It is a roadmap: an illustration of the project with one entry per phase (a summary and the path of its document). Each phase has its own document in `.crewcraft/fases/`, from `<plugin root>/templates/fase.md`, with its Goal, its Architecture (components, data, interfaces), its Executable points (one row per role: the point, the deliverable and the acceptance test), the Variations to test, the Security and load checks, what it Needs, and a Sign-off. Write them so that a role that never talked to the owner can act on them, and keep them proportional to the operation profile (a small offline tool gets "none: reason" where nothing applies). Run `python <plugin root>/scripts/plano.py <absolute project folder> validate` and fix what it reports.
+
+**Ask the owner where to stop.** Before the work starts, ask in plain words: if the roadmap has 20 phases, should the crew stop after certain phases (which ones) or only when all of them are done? Record the answer as an `owner` decision and in the roadmap's `Stop after` line. During the work, when a phase listed there is complete, stop and report to the owner what is done and tested, and wait before continuing.
+
+Read `.crewcraft/decisoes.md`. Turn each phase's executable points into queue tasks, one deliverable and one role per task, and say what each needs first (`--needs`):
 - QA and Security only take what Dev has finished.
 - Marketing only shows what already works.
 - Design and Dev do not edit the same files at the same time.
 
 If a decision is missing, ask the owner one question (see `conversa`); do not guess.
 
-## Step documents
-
-Before adding tasks, write `.crewcraft/plano.md` from `<plugin root>/templates/plano.md`: one stage per deliverable, each with **What to create**, **How**, **Deliverable**, **Acceptance test**, **Variations to test**, **Security and load checks** and **Needs** (write "none: reason" where a check does not apply), written so that a role that never talked to the owner can act on it. Run `python <plugin root>/scripts/plano.py <absolute project folder> validate` and fix what it reports. Every task in the queue belongs to a stage, and each role reads its stage before starting.
-
 ## Robustness, proportional to the risk
 
-The operation profile (`.crewcraft/operacao.md`, filled during the conversation) says how many people will use the project, how exposed it is, what data it handles, how strong the security must be and how many users to stress-test with. After it validates, run `python <plugin root>/scripts/robustez.py <absolute project folder> init`: it derives the checks the project must pass (a small offline tool gets two; a public system with money gets nineteen) into `.crewcraft/testes.md`. Create queue tasks for them: Dev, QA and Security each take the checks of their role, and each check is recorded with real evidence. The release gate stays closed until every required check passed or the owner waived it. Never add work the profile does not require.
+The operation profile (`.crewcraft/operacao.md`, filled during the shaping) says how many people will use the project, how exposed it is, what data it handles, how strong the security must be and how many users to stress-test with. After it validates, run `python <plugin root>/scripts/robustez.py <absolute project folder> init`: it derives the checks the project must pass (a small offline tool gets two; a public system with money gets nineteen) into `.crewcraft/testes.md`. Create queue tasks for them: Dev, QA and Security each take the checks of their role, and each check is recorded with real evidence. The release gate stays closed until every required check passed or the owner waived it. Never add work the profile does not require.
 
 ## Documentation search (RAG)
 
@@ -44,15 +46,23 @@ The plan, the research and the decisions are documents, not only tasks. After wr
 
 After the report is approved and before the plan, run the skill `skills-do-projeto`, so the roles work with the few skills written for this project instead of general ones. Apply `enxuto` to the plan itself: no stage that nobody asked for.
 
+## Roles beyond the core (no fixed limit)
+
+The core roles are Dev, Design, QA, Security, Support and Marketing. A project often needs specialists the core does not cover, for example a sales analyst, a negotiation specialist or a finance reviewer for a sales company. Decide them from the research and the decisions, and create each one with `python <plugin root>/scripts/cargos.py <absolute project folder> add "<name>" --mission "<what it does for this project>"` (add `--reviewed no` for a role that needs no supervisor). A new role gets its own agent in the project's `.claude/agents/`, takes tasks in the queue like the others, is reviewed by `crewcraft:supervisor-geral`, and gets a desk in the office. There is no limit on the number of roles.
+
 ## One task per role
 
 Each role holds one task at a time, and different roles work in parallel. To know what a role does next, run `next <role>`; never hand out a task whose needs are not done. The helper refuses a second task for the same role.
 
 ## Dispatching the crew
 
-Each role is a separate worker, started with the Agent tool: `crewcraft:dev`, `crewcraft:design`, `crewcraft:qa`, `crewcraft:security`, `crewcraft:support`, `crewcraft:marketing`, and the supervisors `crewcraft:supervisor-dev`, `crewcraft:supervisor-design`, `crewcraft:supervisor-teste`. In every dispatch give the absolute project folder, the absolute plugin root (two folders above this skill's folder) and the task id. Different roles run in parallel; a role never gets a second task while it has one in progress.
+Each role is a separate worker, started with the Agent tool: `crewcraft:dev`, `crewcraft:design`, `crewcraft:qa`, `crewcraft:security`, `crewcraft:support`, `crewcraft:marketing`, and the supervisors `crewcraft:supervisor-dev`, `crewcraft:supervisor-design`, `crewcraft:supervisor-teste` and `crewcraft:supervisor-geral` (for the roles the project added). A role the project added is dispatched by its own agent name from the project's `.claude/agents/`. In every dispatch give the absolute project folder, the absolute plugin root (two folders above this skill's folder) and the task id. Different roles run in parallel; a role never gets a second task while it has one in progress.
 
 The flow of a task: the role runs `start`, builds, and runs `submit`; then the matching supervisor is dispatched, which approves (`done and tested`) or rejects with a reason. A rejected task returns to its role with higher priority; after three rejections the helper blocks it and you ask the owner one short question in plain words. Support and Marketing tasks have no supervisor and close with `finish`.
+
+## Delivery and sign-off
+
+The delivery is complete only when everything is built, tested and signed. QA signs (`python <plugin root>/scripts/fila.py <absolute project folder> sign qa "<evidence>"`), Security signs, the test supervisor signs, and you sign last as manager, each with real evidence. Commands such as `git commit` stay blocked until all four signatures exist, every task is approved and every required robustness check passed. Only then tell the owner, in plain words: "Complete, tested and signed by QA, Security, the test supervisor and the manager. You can commit." Never say it earlier.
 
 ## Releasing
 

@@ -9,6 +9,7 @@ Usage: python scripts/fila.py <absolute project folder> <command> [args]
   approve <id> "<evidence>" [--by name] supervisor: done and tested
   reject <id> "<reason>" [--by name]    back to the role (3rd time: asks the owner)
   finish <id> "<evidence>"              Support and Marketing only (no supervisor)
+  sign <qa|security|test|manager> "<evidence>" [--by name]   the four signatures of the delivery
   release-check / release-ok "<note>"   release gate / the owner said yes
   priority <id> <Urgent|High|Normal|Low> --by manager|owner
   placar                                honest scoreboard
@@ -113,8 +114,8 @@ def next_task(tasks, role):
     return pool[0] if pool else None
 
 
-def add(tasks, title, role, priority="Normal", needs=(), by="manager"):
-    if role not in ROLES or priority not in PRIORITIES or by not in WHO:
+def add(tasks, title, role, priority="Normal", needs=(), by="manager", roles=None):
+    if role not in (roles or ROLES) or priority not in PRIORITIES or by not in WHO:
         raise ValueError(f"invalid role, priority or author: {role}/{priority}/{by}")
     for n in needs:
         _find(tasks, n)
@@ -142,11 +143,11 @@ def start(tasks, task_id):
     return task
 
 
-def finish(tasks, task_id, evidence):
+def finish(tasks, task_id, evidence, reviewed=None):
     if not str(evidence).strip():
         raise ValueError("finishing needs evidence that it was tested")
     task = _find(tasks, task_id)
-    if task.role in REVIEWED:
+    if task.role in (reviewed or REVIEWED):
         raise ValueError(f"{task.role} work needs a supervisor: submit it, then approve")
     task.status, task.note = "done", str(evidence).strip()
     _resume_if_clear(tasks)
@@ -209,13 +210,13 @@ def placar(tasks) -> dict:
             "in_construction": building, "waiting": sum(1 for x in tasks if x.status == "todo")}
 
 
-def validate(tasks) -> list:
+def validate(tasks, roles=None) -> list:
     problems, seen = [], set()
     for x in tasks:
         if x.id in seen:
             problems.append(f"{x.id}: duplicate id")
         seen.add(x.id)
-        if x.role not in ROLES:
+        if x.role not in (roles or ROLES):
             problems.append(f"{x.id}: unknown role {x.role}")
         if x.priority not in PRIORITIES:
             problems.append(f"{x.id}: unknown priority {x.priority}")
@@ -228,7 +229,7 @@ def validate(tasks) -> list:
         for n in x.needs:
             if n not in {y.id for y in tasks}:
                 problems.append(f"{x.id}: depends on unknown task {n}")
-    for role in ROLES:
+    for role in sorted({x.role for x in tasks}):
         if sum(1 for x in tasks if x.role == role and x.status == "doing") > 1:
             problems.append(f"role {role} has two tasks in progress")
     by_id = {x.id: x for x in tasks}
@@ -249,8 +250,8 @@ def validate(tasks) -> list:
     return problems
 
 
-def release_problems(tasks, owner_ok) -> list:
-    problems = [f"{x.id} ({x.role}) is {x.status}: {x.title}" for x in tasks if x.role in REVIEWED and x.status != "done"]
+def release_problems(tasks, owner_ok, reviewed=None) -> list:
+    problems = [f"{x.id} ({x.role}) is {x.status}: {x.title}" for x in tasks if x.role in (reviewed or REVIEWED) and x.status != "done"]
     for role in ("QA", "Security"):
         if not any(x.role == role and x.status == "done" for x in tasks):
             problems.append(f"no {role} task is done and approved")
@@ -259,7 +260,7 @@ def release_problems(tasks, owner_ok) -> list:
     return problems
 
 
-RELEASE_PATTERNS = [r"\bgit\s+push\b", r"\bgit\s+tag\b", r"\bnpm\s+publish\b", r"\bgh\s+release\b",
+RELEASE_PATTERNS = [r"\bgit\s+commit\b", r"\bgit\s+push\b", r"\bgit\s+tag\b", r"\bnpm\s+publish\b", r"\bgh\s+release\b",
                     r"\btwine\s+upload\b", r"\bdocker\s+push\b", r"\bcargo\s+publish\b",
                     r"\bwrangler\s+(deploy|publish)\b", r"\bgh\s+pr\s+merge\b"]
 
@@ -273,6 +274,31 @@ def owner_ok(project) -> bool:
         return bool(json.loads((Path(project) / ".crewcraft" / "liberacao.json").read_text(encoding="utf-8")).get("owner_ok"))
     except (OSError, ValueError):
         return False
+
+
+SIGN_ROLES = ["qa", "security", "test", "manager"]
+
+
+def sign(project, who, evidence, by="unknown") -> dict:
+    if who not in SIGN_ROLES:
+        raise ValueError(f"who must be one of: {', '.join(SIGN_ROLES)}")
+    if not str(evidence).strip():
+        raise ValueError("a signature needs evidence: what was checked and the real result")
+    path = Path(project) / ".crewcraft" / "assinaturas.json"
+    data = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    data[who] = {"evidence": str(evidence).strip(), "by": by, "time": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    return data[who]
+
+
+def signoff_problems(project) -> list:
+    path = Path(project) / ".crewcraft" / "assinaturas.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        data = {}
+    return [f"missing signature: {who} (the delivery is signed by QA, Security, the test supervisor and the manager)"
+            for who in SIGN_ROLES if not str(data.get(who, {}).get("evidence", "")).strip()]
 
 
 def _queue_path(project: Path) -> Path:
@@ -322,9 +348,14 @@ def main(argv) -> int:
             print("created fila.md" if created else "fila.md already exists")
             return 0
         tasks = load(project)
+        try:
+            from scripts.cargos import reviewed_roles, role_names
+        except ImportError:
+            from cargos import reviewed_roles, role_names
+        roles, reviewed = role_names(project), reviewed_roles(project)
         if command == "add":
             priority, needs, by = _option(rest, "--priority", "Normal"), _option(rest, "--needs", ""), _option(rest, "--by", "manager")
-            task = add(tasks, rest[0], rest[1], priority, [n for n in needs.split(",") if n], by)
+            task = add(tasks, rest[0], rest[1], priority, [n for n in needs.split(",") if n], by, roles)
             log_event(project, task, "add", priority=priority, by=by)
             print(f"{task.id} added")
         elif command == "next":
@@ -335,7 +366,7 @@ def main(argv) -> int:
             log_event(project, task, "start")
             print(f"{task.id} started")
         elif command == "finish":
-            task = finish(tasks, rest[0], rest[1] if len(rest) > 1 else "")
+            task = finish(tasks, rest[0], rest[1] if len(rest) > 1 else "", reviewed)
             log_event(project, task, "finish", evidence=task.note)
             print(f"{task.id} done and tested")
         elif command == "submit":
@@ -352,12 +383,16 @@ def main(argv) -> int:
             task = reject(tasks, rest[0], rest[1] if len(rest) > 1 else "no reason given")
             log_event(project, task, "reject", by=by, reason=task.note)
             print(f"{task.id} sent back ({task.status}, try {task.tries})")
+        elif command == "sign":
+            by = _option(rest, "--by", "unknown")
+            signed = sign(project, rest[0], rest[1] if len(rest) > 1 else "", by)
+            print(f"{rest[0]} signed ({signed['time']})")
         elif command == "release-check":
             try:
                 from scripts.robustez import problems as robust_problems
             except ImportError:
                 from robustez import problems as robust_problems
-            problems = release_problems(tasks, owner_ok(project)) + robust_problems(project)
+            problems = release_problems(tasks, owner_ok(project), reviewed) + robust_problems(project) + signoff_problems(project)
             print("\n".join(problems) if problems else "OK: release allowed")
             return 1 if problems else 0
         elif command == "release-ok":
@@ -378,7 +413,7 @@ def main(argv) -> int:
                 print(f"  {item['id']} {item['status']}: {item['title']} {item['note']}".rstrip())
             return 0
         elif command == "validate":
-            problems = validate(tasks)
+            problems = validate(tasks, roles)
             print("\n".join(problems) if problems else "OK")
             return 1 if problems else 0
         else:

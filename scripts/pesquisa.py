@@ -21,7 +21,7 @@ except ImportError:  # run as a plain script
     from mask import mask
 
 VERDICTS = {"use", "improve", "avoid"}
-SECTIONS = ["Summary", "Competitors", "Tools and skills", "Documentation", "Robustness and sizing", "Risks and questions", "Sources"]
+SECTIONS = ["Summary", "Competitors", "Tools and skills", "Documentation", "Robustness and sizing", "Proposed crew", "Risks and questions", "Sources"]
 TABLES = ["Competitors", "Tools and skills", "Documentation", "Robustness and sizing"]
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 LOG_HEADER = ("# Searches\n\nEvery search made outside this computer for this project. Queries are generic: "

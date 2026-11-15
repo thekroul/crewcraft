@@ -18,14 +18,17 @@ def main() -> int:
         payload = json.loads(sys.stdin.read())
         if payload.get("tool_name") != "Bash":
             return 0
-        from fila import is_release_command, load, owner_ok, release_problems
+        from fila import is_release_command, load, owner_ok, release_problems, signoff_problems
         from robustez import problems as robust_problems
+        from cargos import reviewed_roles
         if not is_release_command(payload.get("tool_input", {}).get("command", "")):
             return 0
         start = Path(payload.get("cwd") or os.getcwd()).resolve()
         for folder in [start, *start.parents]:
             if (folder / ".crewcraft" / "fila.md").is_file():
-                problems = release_problems(load(folder), owner_ok(folder)) + robust_problems(folder)
+                committing = bool(__import__('re').search(r'\bgit\s+commit\b', payload.get('tool_input', {}).get('command', '')))
+                final_test_done = owner_ok(folder) or committing  # a commit needs the signed delivery; push and deploy also need the owner's final test
+                problems = release_problems(load(folder), final_test_done, reviewed_roles(folder)) + robust_problems(folder) + signoff_problems(folder)
                 if problems:
                     sys.stderr.write("Release blocked by Crewcraft. Still missing:\n- " + "\n- ".join(problems) +
                                      "\nExplain this to the owner in plain words and offer the next step.\n")

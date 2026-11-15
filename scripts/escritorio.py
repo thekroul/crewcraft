@@ -11,13 +11,27 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 try:
-    from scripts.fila import ROLES, load, placar
+    from scripts.cargos import role_names
+    from scripts.fila import load, placar
     from scripts.init_ficha import _checked_project
 except ImportError:  # run as a plain script
-    from fila import ROLES, load, placar
+    from cargos import role_names
+    from fila import load, placar
     from init_ficha import _checked_project
 
 NAMES = {"Dev": "Ana", "Design": "Bruno", "QA": "Carla", "Security": "Davi", "Support": "Eva", "Marketing": "Félix"}
+POOL = ["Gabi", "Hugo", "Iris", "Joao", "Lia", "Marco", "Nina", "Otto", "Paula", "Rui", "Sara", "Tomas", "Vera", "Yuri", "Zeca"]
+
+
+def _names(roles) -> dict:
+    names, extra = {}, 0
+    for role in roles:
+        if role in NAMES:
+            names[role] = NAMES[role]
+        else:
+            names[role] = POOL[extra % len(POOL)] + (str(extra // len(POOL) + 1) if extra >= len(POOL) else "")
+            extra += 1
+    return names
 PAGE = Path(__file__).resolve().parents[1] / "templates" / "escritorio" / "index.html"
 
 
@@ -26,7 +40,9 @@ def build_state(project) -> dict:
     queue = project / ".crewcraft" / "fila.md"
     tasks = load(project) if queue.is_file() else []
     roles = []
-    for role in ROLES:
+    every = role_names(project)
+    names = _names(every)
+    for role in every:
         mine = [x for x in tasks if x.role == role]
         if not mine:
             continue
@@ -39,7 +55,7 @@ def build_state(project) -> dict:
             state, task = "blocked", (pick["blocked"] or pick["paused"]).title
         else:
             state, task = "idle", ""
-        roles.append({"role": role, "name": NAMES[role], "state": state, "task": task})
+        roles.append({"role": role, "name": names[role], "state": state, "task": task})
     events = []
     log = project / ".crewcraft" / "eventos.jsonl"
     if log.is_file():

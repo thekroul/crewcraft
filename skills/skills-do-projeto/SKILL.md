@@ -16,7 +16,7 @@ After the owner approved the research report ("Parecer approved") and before the
 ## How
 
 1. Read `.crewcraft/parecer.md` (the verdicts: use, improve, avoid), `.crewcraft/decisoes.md` and `.crewcraft/ficha-visual.md`.
-2. Choose few skills, only what this project needs (see `enxuto`). For an item marked "improve", write the improved idea for this project in your own words; copy no text from anyone.
+2. Write the skills this project needs, as many as it needs: there is no fixed number (a sales company may need many), but each one must earn its place (see `enxuto`). For an item marked "improve", write the improved idea for this project in your own words; copy no text from anyone.
 3. For each one run `init <name>`, then fill it in. A project skill is rules for this project in at most 120 lines: what to do, what never to do, and where the details live. Point to the project's own files instead of repeating them.
 4. Every skill ends with two lines: `Aligned with:` the decision ids it serves (D3, D7) and `Sources:` a URL with a date (YYYY-MM-DD).
 5. Run `validate` and fix what it reports. A skeleton with TODO in it is not finished.
@@ -30,7 +30,7 @@ Consult them as reference (the reference library in the environment sheet, or wh
 
 ## Warning signs
 
-- Many skills for a small project.
+- More skills than the project's decisions justify.
 - A skill without decision ids or without a sourced, dated line.
 - Text copied from a third-party skill.
 - A skill that repeats the project files instead of pointing to them.

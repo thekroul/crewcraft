@@ -28,6 +28,13 @@ How robust the competitors and standards for this kind of project are, and what 
 | area | competitors do | smallest model | largest model | source | date |
 |---|---|---|---|---|---|
 
+## Proposed crew
+
+The roles this project needs, core and project-specific, each with its mission and why. The owner approves them with the rest of the report; the manager then creates the project roles.
+
+| role | mission | reviewed | why |
+|---|---|---|---|
+
 ## Risks and questions
 
 ## Sources

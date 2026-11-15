@@ -43,14 +43,13 @@ Some projects can hurt: a public system that handles money can lose it through o
 2. Otherwise continue: how many people will use it (typical, and at the same time at the peak), what data it handles (none, personal, financial), the security level, meaning how strong the security must be (medium or robust, with the consequence of each in plain words), how available it must be (best effort, business hours, always on), how many users the stress test should reach (suggest twice the peak and explain why), and what a failure would cost, in the owner's own words.
 3. Run `validate-profile`. The crew derives the checks to pass before a release from this file.
 
-## Order of questions (skip what is already answered)
+## Two phases, with the research in between
 
-1. What is it, who uses it, how often.
-2. What would make it a failure even if it works.
-3. Which kind (option map above).
-4. Look and feel: first the research (`pesquisa`), then `prototipo-visual`, never the other way round.
-5. Must have now versus later.
-6. Where it runs and what already exists.
+The owner's order is: the idea, then the research, then the shaping. Never the other way round: questions asked before the research are guesses.
+
+**Phase A, intake (short).** Ask only what is needed to define the concept to research: what the idea is and who it is for (one open question), and whether it is local (one computer only) or on a network (one question, because the research differs). Phrase it as local or on a network. Do not ask about the look, the features or the sizing yet. Say the concept back in one plain sentence, ask if it is right, then hand over to the skill `pesquisa` and wait for the owner to approve what it finds.
+
+**Phase B, shaping (only after the research items are approved).** Now investigate what the owner truly wants and what truly needs to run, one question per message and informed by the report: what must actually run and what must not be installed (nothing without a need, see `enxuto`); the operation profile below, where for a project on a network you ask how many users it should hold and use the report's smallest and largest models as examples; what would make it a failure; what is a must-have and what can wait; where it runs and what already exists; and last the look (skill `prototipo-visual`). Be investigative before anything is built.
 
 ## "I don't know" or "you choose"
 
@@ -63,11 +62,11 @@ Every settled point becomes a row in `.crewcraft/decisoes.md` (id, decision, by,
 Before writing anything into a project's `.crewcraft/` folder:
 - Confirm which folder is the project without slowing the conversation down. If the session's working directory is clearly one project, or a new empty folder, use it and state its full path in one line inside your reply, without a separate question. Ask first, and write only after the answer, when that folder holds several separate projects or looks like a general folder (home, Documents). Never put one `.crewcraft` in a folder that holds several projects.
 - Never say a decision is saved, recorded or kept unless you have written it to the file in this conversation. If you could not write it yet, say that plainly instead.
-- Never write inside a folder named "Não mexer" (or "Nao mexer"), not even by hand. Tell the person and ask where they want the files.
+- Never write inside a folder the owner listed as read-only, not even by hand. Tell the person and ask where they want the files. The owner controls that list (`somente-leitura.txt`, in the `crewcraft` folder of the Claude configuration folder): if the owner explicitly allows writing in a listed folder, confirm it, remove the entry and proceed.
 
 ## Close the conversation
 
-When the key choices are settled, play back in about 200 words what you understood: what it is, for whom, the kind, the must-haves. Mark what came from them and what is your suggestion. Ask what is wrong or missing. Only after they confirm, continue to the research (skill `pesquisa`), then to the visual prototype (if there is an interface), and then to the plan.
+When the key choices are settled, play back in about 200 words what you understood: what it is, for whom, the kind, the must-haves. Mark what came from them and what is your suggestion. Ask what is wrong or missing. After Phase A is confirmed, continue to the research (skill `pesquisa`). After Phase B is confirmed, continue to the visual prototype (if there is an interface) and then to the plan, which the manager (`gerente`) writes.
 
 ## Warning signs
 

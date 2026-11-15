@@ -29,7 +29,8 @@
 <div id="stage"><canvas id="c"></canvas><div id="tv" class="tv"></div></div>
 <script>
 (() => {
-const W = 320, H = 180;
+const W = 320;
+let H = 180;
 const cvs = document.getElementById('c'), ctx = cvs.getContext('2d');
 const stage = document.getElementById('stage'), tvEl = document.getElementById('tv');
 cvs.width = W; cvs.height = H;
@@ -54,15 +55,23 @@ let RNG = CAP === null ? Math.random : mulberry32(parseInt(params.get('seed') ||
 const rnd = (a, b) => a + RNG() * (b - a), pick = a => a[Math.floor(RNG() * a.length)];
 const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
 
-const COLS = [22, 136, 250], ROWTOP = [66, 112], AP = [103, 103, 217], STRIP = { x0: 12, x1: 306, y0: 152, y1: 172 };
-const COOLER = { x: 282, y: 152 };
+const COLS = [22, 136, 250], AP = [103, 103, 217];
+const rowTop = r => 66 + r * 46;
+let STRIP = { x0: 12, x1: 306, y0: 152, y1: 172 }, COOLER = { x: 282, y: 152 };
+const lane = () => STRIP.y0 + 8;
+function layout(count) { // any number of roles: the office grows by rows of three desks
+  const rows = Math.max(2, Math.ceil(count / 3)), newH = rowTop(rows - 1) + 68;
+  if (newH === H) return;
+  H = newH; cvs.height = H; STRIP = { x0: 12, x1: 306, y0: H - 28, y1: H - 8 }; COOLER = { x: 282, y: H - 28 };
+  resize();
+}
 const LOOK = { Dev: ['#5b7f95', '#3a2a20', '#e0b48c', '#3d4a57'], Design: ['#8a5a7a', '#2a1d18', '#d9a67c', '#40384a'],
   QA: ['#9a6b4f', '#1e1a17', '#c99068', '#4a4038'], Security: ['#4f7a5a', '#4a3322', '#e3b98f', '#38443a'],
   Support: ['#b07a3a', '#5a3a25', '#d8a27a', '#4a4036'], Marketing: ['#7a6aa0', '#2f2420', '#e0b48c', '#3e3b50'] };
 let placar = null, people = [], online = true, seen = null;
 
 function slotGeo(i) {
-  const col = i % 3, row = Math.floor(i / 3), top = ROWTOP[row];
+  const col = i % 3, row = Math.floor(i / 3), top = rowTop(row);
   return { deskX: COLS[col], deskTop: top, seatX: COLS[col] + 24, seatY: top - 1, apX: AP[col] };
 }
 function newPerson(r, i) {
@@ -84,6 +93,7 @@ function applyState(s) {
     p.server = r.state; p.title = r.task;
   });
   people = people.filter(p => { const keep = s.roles.some(r => r.role === p.role); if (!keep) { p.el.remove(); p.bubble.remove(); } return keep; });
+  layout(people.length);
   const events = s.events || [];
   if (seen === null) seen = events.length ? events[events.length - 1].time : '';
   events.filter(e => e.time > seen && (e.event === 'approve' || e.event === 'finish')).forEach(e => {
@@ -103,8 +113,8 @@ function move(p, dt) {
   p.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'); p.moving = true; return true;
 }
 const face = (p, tx, ty) => { const dx = tx - p.x, dy = ty - p.y; p.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'); };
-const seatRoute = p => [[p.g.apX, 160], [p.g.apX, p.g.seatY - 9], [p.g.seatX, p.g.seatY - 9], [p.g.seatX, p.g.seatY]];
-const leaveRoute = p => [[p.g.seatX, p.g.seatY - 9], [p.g.apX, p.g.seatY - 9], [p.g.apX, 160]];
+const seatRoute = p => [[p.g.apX, lane()], [p.g.apX, p.g.seatY - 9], [p.g.seatX, p.g.seatY - 9], [p.g.seatX, p.g.seatY]];
+const leaveRoute = p => [[p.g.seatX, p.g.seatY - 9], [p.g.apX, p.g.seatY - 9], [p.g.apX, lane()]];
 function endChat(p) { p.sub = 'pause'; p.wait = rnd(1, 2); p.chatCool = 25; p.step = -1; }
 function breakChat(p) { people.forEach(q => { if (q !== p && ['waitchat', 'talk', 'chat'].includes(q.sub) && q.mode === 'idle') endChat(q); }); }
 const idleOthers = p => people.filter(q => q !== p && q.mode === 'idle' && ['pause', 'walk'].includes(q.sub));
@@ -144,7 +154,7 @@ function updatePerson(p, dt) {
     else if (p.mode !== 'seat') { breakChat(p); p.sub = ''; p.mode = 'toSeat'; p.seated = false; p.route = seatRoute(p); }
   } else {
     if (p.mode === 'seat') { p.seated = false; p.mode = 'leave'; p.route = leaveRoute(p); }
-    else if (p.mode === 'toSeat') { p.mode = 'leave'; p.route = [[p.g.apX, 160]]; }
+    else if (p.mode === 'toSeat') { p.mode = 'leave'; p.route = [[p.g.apX, lane()]]; }
     else if (p.mode === 'leave') { if (!move(p, dt)) { p.mode = 'idle'; p.sub = 'pause'; p.wait = rnd(1, 2); } }
     else idleStep(p, dt);
   }
@@ -153,7 +163,7 @@ function updatePerson(p, dt) {
 function drawRoom() {
   R(0, 0, W, 44, '#d9c9a8'); R(0, 40, W, 4, '#b79f78');
   for (let y = 44; y < H; y += 6) { R(0, y, W, 6, ((y / 6) | 0) % 2 ? '#c79a63' : '#c19359'); R(0, y + 5, W, 1, '#a97b48'); }
-  R(60, 142, 200, 36, '#6f4538'); R(62, 144, 196, 32, '#8b5a4a');
+  R(60, 142 + H - 180, 200, 36, '#6f4538'); R(62, 144 + H - 180, 196, 32, '#8b5a4a');
   [[22, 8], [264, 8]].forEach(([x, y]) => { R(x, y, 34, 26, '#6b4f35'); R(x + 2, y + 2, 30, 22, '#a9cde0'); R(x + 16, y + 2, 2, 22, '#6b4f35'); R(x + 2, y + 12, 30, 2, '#6b4f35'); });
   R(126, 6, 68, 32, '#2a2420'); R(129, 9, 62, 26, '#1d3a35');
   const pct = placar ? placar.percent : 0;
@@ -166,9 +176,9 @@ function drawDesk(g) {
   R(x0, t, 48, 8, '#b98a54'); R(x0, t, 48, 1, '#d4a86c'); R(x0 + 2, t + 8, 44, 8, '#8f6638'); R(x0 + 4, t + 10, 18, 5, '#7a5530');
   R(x0 + 17, t - 7, 14, 8, '#3b3a3c'); R(x0 + 18, t - 6, 12, 5, '#4b4a4d'); R(x0 + 36, t - 4, 6, 4, '#e8e0cf');
 }
-function drawCooler() { R(288, 118, 13, 19, '#cfd8dc'); R(290, 106, 9, 13, '#8ec5e8'); R(291, 107, 2, 10, '#bfe0f2'); R(292, 125, 5, 3, '#4b6a7d'); R(287, 137, 15, 2, '#8c969b'); }
+function drawCooler() { const d = H - 180; R(288, 118 + d, 13, 19, '#cfd8dc'); R(290, 106 + d, 9, 13, '#8ec5e8'); R(291, 107 + d, 2, 10, '#bfe0f2'); R(292, 125 + d, 5, 3, '#4b6a7d'); R(287, 137 + d, 15, 2, '#8c969b'); }
 function drawPlant(x, y) { R(x, y + 9, 9, 7, '#8a4f33'); R(x - 2, y + 1, 13, 9, '#4d7a3c'); R(x + 1, y - 3, 7, 5, '#5f8f49'); }
-function drawSofa() { R(8, 128, 42, 9, '#5b6e7a'); R(8, 136, 42, 11, '#6b7f8c'); R(6, 132, 4, 14, '#566873'); R(48, 132, 4, 14, '#566873'); }
+function drawSofa() { const d = H - 180; R(8, 128 + d, 42, 9, '#5b6e7a'); R(8, 136 + d, 42, 11, '#6b7f8c'); R(6, 132 + d, 4, 14, '#566873'); R(48, 132 + d, 4, 14, '#566873'); }
 function drawPerson(p, time) {
   const x = Math.round(p.x), y = Math.round(p.y), f = p.moving ? Math.floor(time * 6) % 2 : 0;
   if (p.seated) {
@@ -208,7 +218,7 @@ let last = performance.now(), clock = 0;
 function tick(dt) { clock += dt; people.forEach(p => updatePerson(p, dt)); }
 function render() {
   ctx.clearRect(0, 0, W, H); drawRoom();
-  const items = [{ y: 127, fn: drawCooler }, { y: 90, fn: () => drawPlant(8, 74) }, { y: 148, fn: drawSofa }];
+  const items = [{ y: 127 + H - 180, fn: drawCooler }, { y: 90, fn: () => drawPlant(8, 74) }, { y: 148 + H - 180, fn: drawSofa }];
   people.forEach(p => { items.push({ y: p.g.deskTop + 16, fn: () => drawDesk(p.g) }); items.push({ y: p.seated ? p.g.deskTop : p.y, fn: () => drawPerson(p, clock) }); });
   items.sort((a, b) => a.y - b.y).forEach(i => i.fn());
   people.forEach(overlay);

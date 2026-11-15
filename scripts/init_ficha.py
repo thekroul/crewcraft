@@ -1,28 +1,43 @@
 """Create the `.crewcraft` folder inside a project, from the plugin templates.
 
 Usage: python scripts/init_ficha.py <project_dir> [--variant <client name>]
-Never overwrites a file that already exists. Refuses any path inside a folder
-named "Não mexer" (read-only by the owner's rule).
+Never overwrites a file that already exists. Refuses any path inside a folder the owner listed as
+read-only (see protected_names); nothing is protected by default.
 """
+import os
 import sys
 import unicodedata
 from pathlib import Path
 
 TEMPLATE_FILES = ["decisoes.md", "perguntas.md", "ficha-visual.md"]
-READ_ONLY_FOLDERS = {"nao mexer"}
 
 
 def _plain(part: str) -> str:
+    """Accent, case and spacing insensitive form of a folder name."""
     decomposed = unicodedata.normalize("NFD", part)
-    return "".join(c for c in decomposed if not unicodedata.combining(c)).casefold()
+    return " ".join("".join(c for c in decomposed if not unicodedata.combining(c)).casefold().split())
+
+
+def protected_names() -> set:
+    """Folders the owner marked read-only: one name per line in <claude config>/crewcraft/somente-leitura.txt,
+    or CREWCRAFT_READ_ONLY separated by semicolons. Empty by default: nothing is protected until the owner says so."""
+    names = {_plain(n) for n in os.environ.get("CREWCRAFT_READ_ONLY", "").split(";") if n.strip()}
+    home = Path(os.environ.get("CLAUDE_CONFIG_DIR") or (Path.home() / ".claude"))
+    listing = home / "crewcraft" / "somente-leitura.txt"
+    if listing.is_file():
+        for line in listing.read_text(encoding="utf-8", errors="replace").splitlines():
+            if line.strip() and not line.lstrip().startswith("#"):
+                names.add(_plain(line.strip()))
+    return names
 
 
 def _checked_project(project_dir: Path) -> Path:
     """Resolve the path first, so '.' and '..' cannot hide a read-only folder."""
     project_dir = Path(project_dir).resolve()
+    protected = protected_names()
     for part in project_dir.parts:
-        if _plain(part) in READ_ONLY_FOLDERS:
-            raise ValueError(f"refusing to write inside a read-only folder: {part}")
+        if _plain(part) in protected:
+            raise ValueError(f"refusing to write inside a protected folder: {part} (the owner listed it as read-only; remove it from somente-leitura.txt to allow)")
     if not project_dir.is_dir():
         raise FileNotFoundError(f"project folder does not exist: {project_dir}")
     return project_dir

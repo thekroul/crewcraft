@@ -28,7 +28,7 @@ The plugin root is two folders above this skill's folder (`../../`). Run the hel
 
 It creates only the files that are missing and never overwrites one the owner has edited. If Python is not available, copy the three files from `templates/` by hand and apply the same rule: never overwrite.
 
-It refuses any path inside a folder named "Não mexer" (or "Nao mexer"), even through `.` or `..`. That folder is read-only by the owner's rule: do not work around the refusal, and do not copy the files by hand into it either. Tell the owner and keep the files somewhere they approve.
+It refuses any path inside a folder the owner listed as read-only, even through `.` or `..`. That folder is read-only by the owner's rule: do not work around the refusal, and do not copy the files by hand into it either. Tell the owner and keep the files somewhere they approve. The owner controls that list (`somente-leitura.txt`, in the `crewcraft` folder of the Claude configuration folder): if the owner explicitly allows writing in a listed folder, confirm it, remove the entry and proceed.
 
 ## Client variants (variantes)
 

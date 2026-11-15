@@ -9,7 +9,7 @@ The owner should never receive a finished interface they have not seen. This ski
 
 The plugin root is two folders above this skill's folder (`../../`). Mockup templates are in `templates/mockup/`. Project files go in the project's `.crewcraft/` folder (create it with the `ficha-do-projeto` skill if missing); mockups go in `.crewcraft/prototipos/`.
 
-Ask one question per message, even here: the same rule as in `conversa` applies. Confirm which folder is the project before writing anything, and never write inside a folder named "Não mexer" (or "Nao mexer").
+Ask one question per message, even here: the same rule as in `conversa` applies. Confirm which folder is the project before writing anything, and never write inside a folder the owner listed as read-only.
 
 ## Before showing anything
 
